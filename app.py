@@ -11,18 +11,25 @@ from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, render_template, send_from_directory, Response
 from flask_cors import CORS
 
-app = Flask(__name__, static_folder='static', template_folder='templates')
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+static_folder = os.path.join(BASE_DIR, 'static') if os.path.isdir(os.path.join(BASE_DIR, 'static')) else BASE_DIR
+template_folder = os.path.join(BASE_DIR, 'templates') if os.path.isdir(os.path.join(BASE_DIR, 'templates')) else BASE_DIR
+
+app = Flask(__name__, static_folder=static_folder, template_folder=template_folder)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 CORS(app)
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'omnipoints.db')
+DB_PATH = os.path.join(BASE_DIR, 'omnipoints.db')
 
 # Ensure static & templates directory exists
-os.makedirs(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'css'), exist_ok=True)
-os.makedirs(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'js'), exist_ok=True)
-os.makedirs(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'icons'), exist_ok=True)
-os.makedirs(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates'), exist_ok=True)
+try:
+    os.makedirs(os.path.join(BASE_DIR, 'static', 'css'), exist_ok=True)
+    os.makedirs(os.path.join(BASE_DIR, 'static', 'js'), exist_ok=True)
+    os.makedirs(os.path.join(BASE_DIR, 'static', 'icons'), exist_ok=True)
+    os.makedirs(os.path.join(BASE_DIR, 'templates'), exist_ok=True)
+except Exception:
+    pass
 
 def get_db():
     conn = sqlite3.connect(DB_PATH, timeout=30.0, check_same_thread=False)
@@ -969,17 +976,44 @@ def get_customer_business_ledger(phone):
 
 # ----------------- API ROUTES ----------------- #
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 @app.route('/')
 def index():
-    return render_template('index.html')
+    tpl_path = os.path.join(BASE_DIR, 'templates', 'index.html')
+    if os.path.exists(tpl_path):
+        return render_template('index.html')
+    root_tpl = os.path.join(BASE_DIR, 'index.html')
+    if os.path.exists(root_tpl):
+        return send_from_directory(BASE_DIR, 'index.html')
+    return "OmniPoints Reward Service Running"
 
 @app.route('/manifest.json')
 def serve_manifest():
-    return send_from_directory('static', 'manifest.json')
+    if os.path.exists(os.path.join(BASE_DIR, 'static', 'manifest.json')):
+        return send_from_directory(os.path.join(BASE_DIR, 'static'), 'manifest.json')
+    if os.path.exists(os.path.join(BASE_DIR, 'manifest.json')):
+        return send_from_directory(BASE_DIR, 'manifest.json')
+    return jsonify({"name": "OmniPoints", "start_url": "/"})
 
 @app.route('/sw.js')
 def serve_sw():
-    return send_from_directory('static', 'sw.js', mimetype='application/javascript')
+    if os.path.exists(os.path.join(BASE_DIR, 'static', 'sw.js')):
+        return send_from_directory(os.path.join(BASE_DIR, 'static'), 'sw.js', mimetype='application/javascript')
+    if os.path.exists(os.path.join(BASE_DIR, 'sw.js')):
+        return send_from_directory(BASE_DIR, 'sw.js', mimetype='application/javascript')
+    return "// Service Worker Active", 200, {'Content-Type': 'application/javascript'}
+
+@app.route('/static/<path:filename>')
+def serve_static_universal(filename):
+    full_path = os.path.join(BASE_DIR, 'static', filename)
+    if os.path.exists(full_path):
+        return send_from_directory(os.path.join(BASE_DIR, 'static'), filename)
+    basename = os.path.basename(filename)
+    root_file = os.path.join(BASE_DIR, basename)
+    if os.path.exists(root_file):
+        return send_from_directory(BASE_DIR, basename)
+    return "File Not Found", 404
 
 @app.route('/api/customers', methods=['GET'])
 def list_customers():
