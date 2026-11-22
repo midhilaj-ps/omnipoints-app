@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>OmniPoints - Centralized Multi-Firm Reward Wallet</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#4F46E5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#EEF2FF',
+              500: '#4F46E5',
+              600: '#4338CA',
+              700: '#3730A3',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+  <!-- Confetti Canvas for Gamification -->
+  <canvas id="confetti-canvas"></canvas>
+
+  <!-- Desktop Top Control Bar (Demo, Switchers & Tooling) -->
+  <header class="device-chrome-header w-full max-w-4xl py-3 px-4 flex flex-wrap items-center justify-between gap-3 text-xs border-b border-slate-800 mb-4">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center font-black text-white text-sm shadow-md">
+        OP
+      </div>
+      <div>
+        <div class="font-extrabold text-sm text-white tracking-wide">OmniPoints <span class="text-xs font-normal text-indigo-400">v2.4</span></div>
+        <div class="text-[10px] text-slate-400">Centralized Multi-Firm Customer Reward Wallet (ES PRO Network)</div>
+      </div>
+    </div>
+
+    <!-- Switch Customers (Dynamic EEYES PRO ERP & Network Customers) -->
+    <div class="flex items-center gap-2 bg-slate-900/90 border border-slate-700/60 p-1.5 rounded-2xl flex-wrap">
+      <span class="text-[10px] font-bold text-slate-400 px-1">Customer:</span>
+      <select id="desktop-customer-select" onchange="switchCustomer(this.value)" class="bg-slate-800 text-white font-bold text-[11px] px-2.5 py-1 rounded-xl border border-slate-700 focus:outline-none focus:border-indigo-500 cursor-pointer">
+        <option value="9822012345">🏪 Ramesh Supermarket & Sons (9822012345) [EEYES PRO]</option>
+        <option value="9890123456">🏪 Anjali Kirana Stores (9890123456) [EEYES PRO]</option>
+        <option value="9765432109">🏪 Pooja Medical & General Store (9765432109) [EEYES PRO]</option>
+        <option value="9656360650">👤 Midhilaj (9656360650) [EEYES PRO]</option>
+        <option value="9876543210">👤 Rahul Sharma (9876543210)</option>
+        <option value="9847012345">👤 Priya Nair (9847012345)</option>
+      </select>
+      <button onclick="syncEeyesPro()" id="btn-sync-eeyes" class="px-2.5 py-1 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-extrabold text-[11px] flex items-center gap-1 shadow-md transition" title="Sync live customers, sales, and returns from EEYES PRO Desktop (localhost:3000)">
+        <span>🔄</span><span>Sync EEYES Pro</span>
+      </button>
+      <button onclick="openModal('customer-registration-modal')" class="px-2.5 py-1 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-[11px] flex items-center gap-1 shadow transition">
+        <span>➕</span> Register Customer
+      </button>
+      <button onclick="logoutCustomer()" id="btn-desktop-logout" class="px-2 py-1 rounded-xl bg-slate-800 text-rose-400 font-bold text-[11px] hover:bg-slate-700 transition cursor-pointer">
+        🚪 Logout
+      </button>
+    </div>
+
+    <!-- Real-Time Mobile ⇄ PC Live Mirror Status Badge -->
+    <div class="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-slate-900 border border-emerald-500/30 shadow" id="desktop-sync-status-badge" title="Real-Time Synchronization between Mobile Phone and Computer">
+      <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" id="desktop-sync-dot"></span>
+      <span class="text-[11px] font-extrabold text-emerald-300" id="desktop-sync-text">📱 Mobile ⇄ 💻 PC Live Mirror</span>
+      <span class="text-[10px] text-slate-400 font-mono" id="desktop-device-count">(1 Active)</span>
+    </div>
+
+    <!-- Quick Tools: Store Cashier Counter & ERP Integrator -->
+    <div class="flex items-center gap-2">
+      <button onclick="openCashierSimulator()" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold flex items-center gap-1.5 shadow transition">
+        <span>🏪</span> Store Cashier POS
+      </button>
+      <button onclick="openModal('erp-simulator-modal')" class="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold flex items-center gap-1.5 shadow transition">
+        <span>⚡</span> ES PRO ERP Webhook
+      </button>
+    </div>
+  </header>
+
+  <!-- Floating Remote Sync Notification Indicator -->
+  <div id="remote-sync-pill" class="fixed top-3 z-50 px-3.5 py-1 rounded-full bg-gradient-to-r from-emerald-600 to-indigo-600 text-white font-black text-[11px] shadow-2xl flex items-center gap-1.5 border border-white/20 transition-all duration-300 opacity-0 pointer-events-none transform -translate-y-2">
+    <span>⚡</span>
+    <span id="remote-sync-pill-text">Live Synced from Phone</span>
+  </div>
+
+  <!-- Simulated Mobile Device Frame (Android / iOS) -->
+  <main class="device-container" id="app-device-frame">
+
+    <!-- Top Dynamic Island / Status Bar -->
+    <div class="dynamic-island-bar">
+      <span class="text-xs font-semibold text-slate-300 tracking-wider font-mono" id="status-clock">10:45</span>
+      <div class="dynamic-island-pill cursor-pointer" id="dynamic-island-sync-pill" title="Real-Time Mobile ⇄ PC Live Sync">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" id="mobile-sync-dot"></span>
+        <span class="text-[9px] font-bold text-slate-300" id="mobile-sync-text">Live Mirroring</span>
+      </div>
+      <div class="flex items-center gap-1.5 text-xs text-slate-300">
+        <span>5G</span>
+        <span>📶</span>
+        <span>🔋 98%</span>
+      </div>
+    </div>
+
+    <!-- App Header Inside Mobile Screen -->
+    <div class="px-4 pt-2 pb-3 flex items-center justify-between border-b border-slate-800/60 bg-slate-900/40" id="mobile-app-header">
+      <!-- Logged In State: User Profile -->
+      <div class="flex items-center gap-3 cursor-pointer" id="mobile-header-user" onclick="openCustomerIdCard()">
+        <div id="header-user-avatar" class="w-10 h-10 rounded-2xl flex items-center justify-center font-black text-white text-base shadow-lg">
+          R
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <span class="text-sm font-black text-white" id="header-user-name">Rahul Sharma</span>
+            <span id="header-vip-badge" class="pill-badge bg-amber-500/20 text-amber-300 text-[10px]">Gold VIP</span>
+          </div>
+          <div class="text-[11px] text-slate-400 font-mono" id="header-user-phone">+91 9876543210</div>
+        </div>
+      </div>
+
+      <!-- Logged Out State: Branding -->
+      <div class="hidden items-center gap-2" id="mobile-header-guest">
+        <span class="text-2xl">🎁</span>
+        <div>
+          <span class="text-sm font-black text-white block leading-tight">OmniPoints</span>
+          <span class="text-[10px] text-amber-400 font-bold block">ലോഗിൻ ചെയ്യുക (Sign-In)</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-1.5" id="mobile-header-actions">
+        <button onclick="openCustomerIdCard()" title="Customer Registered ID Pass" class="px-2 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-indigo-500/20 border border-amber-500/40 text-amber-300 flex items-center gap-1 text-[11px] font-extrabold hover:border-amber-400 transition cursor-pointer" id="btn-mobile-pass">
+          <span>🪪</span> Pass
+        </button>
+        <button onclick="syncEeyesPro()" title="Sync EEYES PRO Desktop ERP (localhost:3000)" class="w-8 h-8 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 text-white flex items-center justify-center text-xs font-bold transition shadow cursor-pointer" id="mobile-eeyes-sync-btn">
+          🔄
+        </button>
+        <button onclick="logoutCustomer()" title="Logout / Switch Phone" class="px-2 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-400 flex items-center gap-1 text-[11px] font-bold transition border border-slate-700/60 cursor-pointer" id="btn-mobile-logout">
+          <span>🚪</span> Logout
+        </button>
+      </div>
+    </div>
+
+    <!-- Scrollable Viewport Content -->
+    <div class="app-viewport px-4 pt-3">
+
+      <!-- ==================== VIEW 0: LOGIN & ONBOARDING INTERFACE ==================== -->
+      <section id="view-login" class="tab-view active animate-fade-in py-2">
+        <div class="text-center mb-5">
+          <div class="w-16 h-16 rounded-3xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-amber-500 mx-auto flex items-center justify-center text-3xl shadow-xl border border-white/20 mb-3 animate-pulse">
+            🎁
+          </div>
+          <h1 class="text-lg font-black text-white tracking-tight">OmniPoints</h1>
+          <p class="text-xs text-amber-400 font-extrabold uppercase tracking-wider">സെൻട്രലൈസ്ഡ് റിവാർഡ് വാലറ്റ്</p>
+          <p class="text-[11px] text-slate-400 mt-0.5">Powered by EEYES PRO ERP & Unified Partner Stores</p>
+        </div>
+
+        <!-- Login Card -->
+        <div class="glass-card p-4 rounded-3xl border border-slate-700/80 shadow-2xl space-y-4">
+          <!-- Step 1: Mobile Number Input -->
+          <div id="landing-login-step-phone" class="space-y-3.5">
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="text-xs font-bold text-white flex items-center gap-1.5">
+                  <span>📱</span>
+                  <span>രജിസ്റ്റർ ചെയ്ത മൊബൈൽ നമ്പർ നൽകുക</span>
+                </label>
+                <span class="text-[10px] text-slate-400">10-Digit Mobile</span>
+              </div>
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 font-bold text-xs">
+                  🇮🇳 +91
+                </div>
+                <input id="landing-phone-input" type="tel" maxlength="10" placeholder="e.g. 9822012345" class="w-full bg-slate-900 border border-slate-700 rounded-2xl pl-16 pr-3 py-3 text-base text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner">
+              </div>
+              <p class="text-[10px] text-slate-400 mt-1">ഈ മൊബൈൽ നമ്പറുമായി ബന്ധപ്പെട്ട എല്ലാ ഫേമുകളിലെയും വിവരങ്ങളും റിവാർഡുകളും ഒരൊറ്റ വാലറ്റിൽ ലഭ്യമാകും.</p>
+            </div>
+
+            <!-- Quick Login Customer Shortcuts -->
+            <div>
+              <div class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
+                <span>Quick Select Customer:</span>
+                <span class="text-[9px] text-emerald-400 font-bold">EEYES PRO & Partners</span>
+              </div>
+              <div class="grid grid-cols-2 gap-2 text-left">
+                <button type="button" onclick="selectLandingCustomer('9822012345')" class="p-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-emerald-500/30 hover:border-emerald-400 transition cursor-pointer flex flex-col justify-between">
+                  <div class="font-extrabold text-white text-[11px] truncate flex items-center gap-1">
+                    <span>🏪</span><span>Ramesh Supermarket</span>
+                  </div>
+                  <div class="text-[9px] font-mono text-emerald-400 mt-1 font-bold">+91 9822012345</div>
+                  <div class="text-[8px] text-slate-400 mt-0.5">EEYES PRO Store</div>
+                </button>
+                <button type="button" onclick="selectLandingCustomer('9946889900')" class="p-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-emerald-500/30 hover:border-emerald-400 transition cursor-pointer flex flex-col justify-between">
+                  <div class="font-extrabold text-white text-[11px] truncate flex items-center gap-1">
+                    <span>🏪</span><span>Malabar Spices</span>
+                  </div>
+                  <div class="text-[9px] font-mono text-emerald-400 mt-1 font-bold">+91 9946889900</div>
+                  <div class="text-[8px] text-slate-400 mt-0.5">EEYES PRO Store</div>
+                </button>
+                <button type="button" onclick="selectLandingCustomer('9890123456')" class="p-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-slate-700 hover:border-slate-500 transition cursor-pointer flex flex-col justify-between">
+                  <div class="font-extrabold text-white text-[11px] truncate flex items-center gap-1">
+                    <span>🏪</span><span>Anjali Kirana</span>
+                  </div>
+                  <div class="text-[9px] font-mono text-indigo-400 mt-1 font-bold">+91 9890123456</div>
+                  <div class="text-[8px] text-slate-400 mt-0.5">EEYES PRO Store</div>
+                </button>
+                <button type="button" onclick="selectLandingCustomer('9876543210')" class="p-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-slate-700 hover:border-slate-500 transition cursor-pointer flex flex-col justify-between">
+                  <div class="font-extrabold text-white text-[11px] truncate flex items-center gap-1">
+                    <span>👤</span><span>Rahul Sharma</span>
+                  </div>
+                  <div class="text-[9px] font-mono text-indigo-400 mt-1 font-bold">+91 9876543210</div>
+                  <div class="text-[8px] text-amber-400 mt-0.5">Multi-Store Name Divergence</div>
+                </button>
+              </div>
+            </div>
+
+            <button type="button" id="btn-landing-request-otp" onclick="requestLandingOtpFlow()" class="w-full py-3.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white font-black text-xs rounded-2xl shadow-lg transition flex items-center justify-center gap-2 cursor-pointer transform hover:scale-[1.01]">
+              <span>തുടരുക / Get OTP (ലോഗിൻ ചെയ്യുക)</span>
+              <span>&rarr;</span>
+            </button>
+          </div>
+
+          <!-- Step 2: OTP Entry & Multi-Firm Name Resolution -->
+          <div id="landing-login-step-otp" class="space-y-3.5 hidden">
+            <!-- Target Phone Banner -->
+            <div class="p-2.5 rounded-2xl bg-indigo-950/60 border border-indigo-500/30 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="text-base">📲</span>
+                <div>
+                  <div class="text-[10px] text-slate-400">OTP Sent to:</div>
+                  <div class="font-mono font-bold text-white text-xs" id="landing-otp-target-phone">+91 9822012345</div>
+                </div>
+              </div>
+              <button type="button" onclick="backToLandingPhoneStep()" class="text-[11px] font-bold text-indigo-400 hover:text-indigo-300 cursor-pointer">Change Phone</button>
+            </div>
+
+            <!-- OTP Input -->
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="font-bold text-slate-200 text-xs">Enter 6-Digit OTP (ഒടിപി നൽകുക)</label>
+                <button type="button" id="btn-landing-autofill-otp" onclick="autoFillLandingDemoOtp()" class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition cursor-pointer">
+                  Auto-Fill OTP: <span id="landing-demo-otp-badge" class="font-mono">------</span>
+                </button>
+              </div>
+              <input id="landing-otp-input" type="text" maxlength="6" placeholder="• • • • • •" class="w-full bg-slate-900 border border-slate-700 rounded-2xl px-3 py-3 text-center text-2xl tracking-[0.4em] text-amber-400 font-mono font-black focus:outline-none focus:border-amber-400 shadow-inner">
+            </div>
+
+            <!-- Multi-Firm Name Resolution Section -->
+            <div id="landing-name-conflict-box" class="p-3.5 rounded-2xl bg-slate-900/90 border border-amber-500/30 hidden">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-base">🔀</span>
+                <div>
+                  <div class="font-bold text-white text-xs">Cross-Store Profile Name Conflict</div>
+                  <div class="text-[10px] text-slate-400">Registered with different names across partner firms.</div>
+                </div>
+              </div>
+              <div class="text-[10px] text-amber-300/90 mb-2.5">
+                Select your preferred centralized display name:
+              </div>
+              <div id="landing-firm-names-radio-container" class="space-y-1.5 mb-2.5"></div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-400 mb-1">Or enter custom preferred name:</label>
+                <input id="landing-custom-name-input" type="text" placeholder="e.g. Ramesh S." class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:border-indigo-500">
+              </div>
+            </div>
+
+            <button type="button" id="btn-landing-verify-otp" onclick="verifyLandingOtpFlow()" class="w-full py-3.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white font-black text-xs rounded-2xl shadow-lg transition flex items-center justify-center gap-2 cursor-pointer transform hover:scale-[1.01]">
+              <span>ഹോം പേജിലേക്ക് പ്രവേശിക്കുക (Enter Home Page)</span>
+              <span>&rarr;</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-4 p-3 rounded-2xl bg-slate-900/40 border border-slate-800 text-center text-[10px] text-slate-400">
+          🔒 100% Secure & Unified with EEYES PRO ERP Software • 1 Reward Point = ₹1.00
+        </div>
+      </section>
+
+      <!-- ==================== VIEW 1: HOME ==================== -->
+      <section id="view-home" class="tab-view animate-slide-up hidden">
+
+        <!-- Urgent Merchant Redemption Approval Banner -->
+        <div id="merchant-approval-urgent-banner" class="hidden mb-3 p-3 bg-gradient-to-r from-amber-600 via-purple-700 to-indigo-700 text-white rounded-2xl shadow-xl border border-amber-300/60 animate-pulse flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <span class="text-2xl">🎁</span>
+            <div>
+              <div class="font-black text-xs">EEYES PRO റിഡംപ്ഷൻ റിക്വസ്റ്റ്!</div>
+              <div class="text-[10px] text-amber-100">ബില്ലിൽ കുറയ്ക്കാൻ: <strong class="text-white font-mono text-xs" id="banner-mreq-amount">₹0.00</strong></div>
+            </div>
+          </div>
+          <button type="button" onclick="openModal('merchant-approval-modal')" class="px-3 py-1.5 bg-white text-slate-950 font-black text-[11px] rounded-xl shadow cursor-pointer hover:bg-amber-50 transition transform hover:scale-105">
+            റിവ്യൂ ചെയ്യുക &rarr;
+          </button>
+        </div>
+
+        <!-- Urgent Expiring Alert (Dynamic) -->
+        <div id="urgent-alert-container" class="hidden"></div>
+
+        <!-- Centralized Wallet Hero Card -->
+        <div class="wallet-hero-card rounded-3xl p-5 mb-4 shadow-xl">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+              <span class="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Centralized Wallet Balance</span>
+            </div>
+            <span class="text-[10px] font-bold text-indigo-300 bg-indigo-500/20 px-2 py-0.5 rounded-full">1 Pt = ₹1</span>
+          </div>
+
+          <!-- Total Balance in Points & Rupees -->
+          <div class="flex items-baseline gap-2">
+            <span class="text-3xl font-black text-white wallet-inr-display tracking-tight">₹0.00</span>
+            <span class="text-xs font-bold text-emerald-400">(<span class="wallet-points-display">0</span> Points)</span>
+          </div>
+
+          <div class="text-[11px] text-slate-300 mt-1 flex items-center gap-2">
+            <span>Unified Points across 6 Business Categories</span>
+            <span id="hero-expiring-soon" class="text-rose-400 font-bold hidden"></span>
+          </div>
+
+          <!-- Quick Action Buttons -->
+          <div class="grid grid-cols-3 gap-2.5 mt-4 pt-4 border-t border-white/10">
+            <button onclick="switchTab('redeem')" class="py-2.5 px-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex flex-col items-center justify-center gap-1 shadow transition">
+              <span class="text-base">💳</span>
+              <span>Redeem QR</span>
+            </button>
+            <button onclick="switchTab('firms')" class="py-2.5 px-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white font-bold text-xs flex flex-col items-center justify-center gap-1 border border-white/10 transition">
+              <span class="text-base">🏪</span>
+              <span>Partner Stores</span>
+            </button>
+            <button onclick="switchTab('ledger')" class="py-2.5 px-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white font-bold text-xs flex flex-col items-center justify-center gap-1 border border-white/10 transition">
+              <span class="text-base">📜</span>
+              <span>Passbook</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Interactive Mystery Scratch Card Banner (Customer Addictive) -->
+        <div id="scratch-card-preview-container" class="hidden"></div>
+
+        <!-- ==================== MINIMALIST EMBLEM BUSINESS ACTIVITY & INVOICES LEDGER ==================== -->
+        <div class="mb-5">
+          <div class="flex items-center justify-between mb-2.5">
+            <div class="flex items-center gap-1.5">
+              <span class="text-sm">📊</span>
+              <div>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-200">Business Activity & Ledger</span>
+                <span class="text-[9px] text-slate-400 block">Unified Multi-Store Invoices, Purchases & Returns</span>
+              </div>
+            </div>
+            <button onclick="openModal('return-simulator-modal')" class="text-[10px] font-bold text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 px-2 py-1 rounded-xl flex items-center gap-1 border border-amber-500/20 transition">
+              <span>↩️</span> Record Return
+            </button>
+          </div>
+
+          <!-- 4 Minimalist Emblem Stat Tiles (Clear Symbols & Glanceable Values) -->
+          <div class="grid grid-cols-2 gap-2.5 mb-3">
+            <!-- 1. Purchases Emblem -->
+            <div class="glass-card p-3 bg-gradient-to-br from-indigo-950/40 via-slate-900 to-slate-950 border border-indigo-500/30 relative overflow-hidden">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[10px] font-bold text-indigo-300 uppercase tracking-wider">Gross Purchases</span>
+                <span class="w-6 h-6 rounded-lg bg-indigo-600/30 border border-indigo-400/30 flex items-center justify-center text-xs">🛍️</span>
+              </div>
+              <div class="text-base font-black text-white tracking-tight" id="ledger-purchases-amount">₹0.00</div>
+              <div class="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1 font-semibold">
+                <span class="text-indigo-400">🧾</span> <span id="ledger-invoices-count">0 Invoices</span>
+              </div>
+            </div>
+
+            <!-- 2. Returns / Surrender Emblem -->
+            <div class="glass-card p-3 bg-gradient-to-br from-amber-950/40 via-slate-900 to-slate-950 border border-amber-500/30 relative overflow-hidden">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[10px] font-bold text-amber-300 uppercase tracking-wider">Goods Surrender</span>
+                <span class="w-6 h-6 rounded-lg bg-amber-600/30 border border-amber-400/30 flex items-center justify-center text-xs">↩️</span>
+              </div>
+              <div class="text-base font-black text-amber-400 tracking-tight" id="ledger-returns-amount">₹0.00</div>
+              <div class="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1 font-semibold">
+                <span class="text-amber-400">📄</span> <span id="ledger-returns-count">0 Returns</span>
+              </div>
+            </div>
+
+            <!-- 3. Net Purchases Emblem -->
+            <div class="glass-card p-3 bg-gradient-to-br from-emerald-950/40 via-slate-900 to-slate-950 border border-emerald-500/30 relative overflow-hidden">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[10px] font-bold text-emerald-300 uppercase tracking-wider">Net Purchases</span>
+                <span class="w-6 h-6 rounded-lg bg-emerald-600/30 border border-emerald-400/30 flex items-center justify-center text-xs">💳</span>
+              </div>
+              <div class="text-base font-black text-emerald-400 tracking-tight" id="ledger-net-amount">₹0.00</div>
+              <div class="text-[10px] text-emerald-300/80 mt-0.5 font-semibold">Eligible Spend</div>
+            </div>
+
+            <!-- 4. Cashback Emblem -->
+            <div class="glass-card p-3 bg-gradient-to-br from-cyan-950/40 via-slate-900 to-slate-950 border border-cyan-500/30 relative overflow-hidden">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[10px] font-bold text-cyan-300 uppercase tracking-wider">Cashback Earned</span>
+                <span class="w-6 h-6 rounded-lg bg-cyan-600/30 border border-cyan-400/30 flex items-center justify-center text-xs">🎁</span>
+              </div>
+              <div class="text-base font-black text-cyan-300 tracking-tight" id="ledger-cashback-amount">₹0.00</div>
+              <div class="text-[10px] text-cyan-400 mt-0.5 font-semibold">1 Pt = ₹1 Off</div>
+            </div>
+          </div>
+
+          <!-- Store-by-Store Business Ledger Cards (Per-firm bill counts, purchases, surrender returns) -->
+          <div class="mb-2">
+            <div class="text-[11px] font-bold text-slate-400 mb-2 flex items-center justify-between">
+              <span>CONNECTED STORES LEDGER</span>
+              <span class="text-[10px] text-indigo-400">Tap to expand invoices</span>
+            </div>
+            <div id="store-ledger-list" class="space-y-2">
+              <!-- Rendered dynamically by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Firm Balance Breakdown Carousel -->
+        <div class="mb-4">
+          <div class="flex items-center justify-between mb-2">
+            <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Points by Partner Firm</div>
+            <button onclick="switchTab('firms')" class="text-[11px] font-bold text-indigo-400 hover:text-indigo-300">View All &rarr;</button>
+          </div>
+          <div class="chip-scroll py-1" id="firm-breakdown-carousel">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+
+        <!-- Batch-Wise Points & Expiry Engine Breakdown -->
+        <div class="mb-4">
+          <div class="flex items-center justify-between mb-2.5">
+            <div>
+              <div class="text-xs font-bold uppercase tracking-wider text-slate-300">Active Batches & Expiry Dates</div>
+              <div class="text-[10px] text-slate-500">Each batch has its own purchase rule & expiry date</div>
+            </div>
+            <span class="text-[10px] bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded-full font-bold">FIFO ORDER</span>
+          </div>
+
+          <div id="all-batches-list">
+            <!-- Batches rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- Quick Store Offers & Ads Preview -->
+        <div class="mb-6">
+          <div class="flex items-center justify-between mb-2">
+            <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Featured Store Deals & Ads</div>
+            <span class="text-[10px] text-emerald-400 font-semibold">Updated Today</span>
+          </div>
+          <div class="glass-card p-3 border border-emerald-500/20 bg-gradient-to-r from-emerald-950/20 to-slate-900 flex items-center justify-between">
+            <div>
+              <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 uppercase">ES Supermarket</span>
+              <div class="text-xs font-bold text-white mt-1">Weekend 50% Profit Cashback on Fresh Produce</div>
+              <div class="text-[10px] text-slate-400">Earn double points on ready UPI billing over ₹2,000</div>
+            </div>
+            <button onclick="openFirmDetailModal('firm-es-pro')" class="px-2.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs rounded-xl transition">
+              Claim &rarr;
+            </button>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ==================== VIEW 2: FIRMS & CATEGORIES ==================== -->
+      <section id="view-firms" class="tab-view hidden animate-slide-up">
+        <div class="mb-3">
+          <div class="text-base font-extrabold text-white">Partner Stores & Categories</div>
+          <div class="text-xs text-slate-400">Centralized reward network across diverse businesses</div>
+        </div>
+
+        <!-- Category Filter Chips -->
+        <div class="chip-scroll mb-3">
+          <button onclick="filterFirmsByCategory('ALL', this)" class="chip-btn firms-filter-btn active">All Stores</button>
+          <button onclick="filterFirmsByCategory('SUPERMARKET', this)" class="chip-btn firms-filter-btn">Supermarkets</button>
+          <button onclick="filterFirmsByCategory('FUEL', this)" class="chip-btn firms-filter-btn">Fuel & CNG</button>
+          <button onclick="filterFirmsByCategory('CAFÉ', this)" class="chip-btn firms-filter-btn">Café & Bakeries</button>
+          <button onclick="filterFirmsByCategory('ELECTRONICS', this)" class="chip-btn firms-filter-btn">Electronics</button>
+          <button onclick="filterFirmsByCategory('FASHION', this)" class="chip-btn firms-filter-btn">Fashion</button>
+          <button onclick="filterFirmsByCategory('HEALTHCARE', this)" class="chip-btn firms-filter-btn">Pharmacy & Wellness</button>
+        </div>
+
+        <!-- Firms List Container -->
+        <div id="firms-full-list">
+          <!-- Populated by JS -->
+        </div>
+      </section>
+
+      <!-- ==================== VIEW 3: REDEEM AT COUNTER (QR & OTP) ==================== -->
+      <section id="view-redeem" class="tab-view hidden animate-slide-up">
+        <div class="mb-3 text-center">
+          <div class="text-base font-extrabold text-white">In-Store Counter Redemption</div>
+          <div class="text-xs text-slate-400">Present OTP / QR Code to cashier to deduct points from bill</div>
+        </div>
+
+        <!-- Step 1: Input Setup -->
+        <div id="redeem-step-input" class="glass-card p-5 mb-4">
+          <div class="mb-4">
+            <label class="block text-xs font-bold text-slate-300 mb-1.5">Select Store / Firm</label>
+            <select id="redeem-firm-select" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 font-semibold">
+              <!-- Populated by JS -->
+            </select>
+          </div>
+
+          <!-- Dynamic Rule Guideline for Selected Firm -->
+          <div id="redeem-rule-guideline" class="mb-4"></div>
+
+          <div class="mb-4">
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="text-xs font-bold text-slate-300">Points to Redeem</label>
+              <span class="text-[11px] text-slate-400">Max Avail: <strong class="text-emerald-400 wallet-points-display">0</strong> Pts</span>
+            </div>
+            <div class="relative">
+              <span class="absolute left-3 top-2.5 text-slate-400 font-bold text-sm">₹</span>
+              <input id="redeem-points-input" type="number" min="1" step="1" value="100" class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-8 pr-3 py-2.5 text-sm text-white font-extrabold focus:outline-none focus:border-indigo-500">
+            </div>
+            <div class="text-[10px] text-slate-500 mt-1">1 Reward Point = ₹1.00 Bill Offset</div>
+          </div>
+
+          <button onclick="generateRedemptionCode()" class="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-extrabold text-sm shadow-lg transition">
+            Generate Dynamic QR & OTP &rarr;
+          </button>
+        </div>
+
+        <!-- Step 2: Active Dynamic QR & OTP Display -->
+        <div id="redeem-step-active" class="glass-card p-5 text-center hidden mb-4">
+          <div class="inline-block px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold mb-3">
+            ● Ready for Cashier Scan
+          </div>
+
+          <div class="text-xs text-slate-400">Show this 6-Digit Counter OTP to Cashier:</div>
+          <div class="text-4xl font-mono font-black text-amber-400 tracking-widest my-2 select-all" id="active-qr-otp">
+            ------
+          </div>
+
+          <!-- QR Code Container -->
+          <div class="my-4 flex justify-center">
+            <div class="qr-container" id="active-qr-canvas"></div>
+          </div>
+
+          <div class="text-xs text-slate-300 font-semibold" id="active-qr-firm-name">ES Supermarket</div>
+          <div class="text-base font-black text-emerald-400 my-0.5" id="active-qr-points">₹0.00 Off</div>
+          <div class="text-[11px] text-slate-400 mb-3" id="active-qr-rule">10x Purchase Rule Applied</div>
+
+          <!-- Countdown timer -->
+          <div class="text-xs text-slate-400 flex items-center justify-center gap-1.5 mb-4">
+            <span>Code expires in:</span>
+            <span class="timer-pill text-rose-400 font-bold" id="active-qr-timer">05:00</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="openCashierSimulator()" class="py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition">
+              🏪 Test in Cashier POS
+            </button>
+            <button onclick="cancelActiveRedemption()" class="py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl transition">
+              Cancel Code
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== VIEW 4: PASSBOOK / TRANSACTIONS ==================== -->
+      <section id="view-ledger" class="tab-view hidden animate-slide-up">
+        <div class="mb-3">
+          <div class="text-base font-extrabold text-white">Reward Passbook</div>
+          <div class="text-xs text-slate-400">Complete audit trail of earned and redeemed points</div>
+        </div>
+
+        <!-- Filter Chips -->
+        <div class="chip-scroll mb-3">
+          <button onclick="filterLedger('ALL', this)" class="chip-btn ledger-filter-btn active">All Activity</button>
+          <button onclick="filterLedger('EARN', this)" class="chip-btn ledger-filter-btn">Points Earned</button>
+          <button onclick="filterLedger('REDEEM', this)" class="chip-btn ledger-filter-btn">Points Redeemed</button>
+          <button onclick="filterLedger('BONUS', this)" class="chip-btn ledger-filter-btn">Bonus & Gifts</button>
+        </div>
+
+        <div id="transactions-ledger-list">
+          <!-- Populated by JS -->
+        </div>
+      </section>
+
+      <!-- ==================== VIEW 5: PROFILE & NETWORK SETTINGS ==================== -->
+      <section id="view-profile" class="tab-view hidden animate-slide-up">
+        <div class="glass-card p-4 mb-4 text-center">
+          <div class="w-16 h-16 rounded-3xl mx-auto flex items-center justify-center font-black text-2xl text-white shadow-xl mb-2" style="background-color: #4F46E5;">
+            👤
+          </div>
+          <div class="text-base font-extrabold text-white" id="profile-name">Rahul Sharma</div>
+          <div class="text-xs text-slate-400 font-mono mt-0.5" id="profile-phone">+91 9876543210</div>
+          <div class="mt-2 inline-block px-3 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold" id="profile-tier">
+            Gold VIP Member
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 mb-4">
+          <div class="glass-card p-3">
+            <div class="text-[10px] text-slate-400 uppercase font-semibold">Lifetime Earned</div>
+            <div class="text-base font-black text-emerald-400" id="profile-earned-val">₹0.00</div>
+          </div>
+          <div class="glass-card p-3">
+            <div class="text-[10px] text-slate-400 uppercase font-semibold">Lifetime Redeemed</div>
+            <div class="text-base font-black text-indigo-400" id="profile-redeemed-val">₹0.00</div>
+          </div>
+        </div>
+
+        <!-- Network Integration Badges -->
+        <div class="glass-card p-4 mb-4">
+          <div class="text-xs font-bold text-white mb-2">Connected ERP Integrations</div>
+          <div class="space-y-2 text-xs">
+            <div class="flex items-center justify-between p-2 rounded-xl bg-slate-900 border border-slate-800">
+              <span class="flex items-center gap-1.5 font-bold text-white">
+                <span class="text-emerald-400">●</span> ES PRO ERP Retail Bridge
+              </span>
+              <span class="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">ONLINE</span>
+            </div>
+            <div class="flex items-center justify-between p-2 rounded-xl bg-slate-900 border border-slate-800">
+              <span class="flex items-center gap-1.5 font-bold text-white">
+                <span class="text-cyan-400">●</span> Multi-Firm Webhook Gateway
+              </span>
+              <span class="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded">ACTIVE</span>
+            </div>
+          </div>
+        </div>
+
+        <button onclick="openModal('erp-simulator-modal')" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow transition mb-2">
+          ⚡ Launch ERP Webhook Sandbox
+        </button>
+
+        <button onclick="openModal('login-modal')" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl transition">
+          Switch / Register Customer Phone
+        </button>
+      </section>
+
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="bottom-nav" id="app-bottom-nav">
+      <div class="nav-item active" data-tab="home">
+        <span class="text-lg nav-icon">🏠</span>
+        <span>Home</span>
+      </div>
+      <div class="nav-item" data-tab="firms">
+        <span class="text-lg nav-icon">🏪</span>
+        <span>Firms</span>
+      </div>
+      <div class="nav-fab-qr" onclick="switchTab('redeem')" title="Redeem at Counter">
+        <span class="text-2xl font-bold">QR</span>
+      </div>
+      <div class="nav-item" data-tab="ledger">
+        <span class="text-lg nav-icon">📜</span>
+        <span>Passbook</span>
+      </div>
+      <div class="nav-item" data-tab="profile">
+        <span class="text-lg nav-icon">👤</span>
+        <span>Account</span>
+      </div>
+    </nav>
+
+  <!-- Global Sheet Overlay -->
+  <div id="global-sheet-overlay" class="sheet-overlay" onclick="closeAllModals()"></div>
+
+  <!-- Global Loading Indicator -->
+  <div id="global-loading-spinner" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center hidden">
+    <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex items-center gap-3">
+      <span class="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></span>
+      <span class="text-xs font-bold text-white">Syncing Wallet...</span>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="app-toast" class="fixed top-6 z-50 px-4 py-2.5 bg-indigo-600 text-white font-bold text-xs rounded-2xl shadow-2xl transition-all duration-300 hidden">
+    Notification
+  </div>
+
+  <!-- ==================== MODAL 1: STORE CASHIER POS SIMULATOR ==================== -->
+  <div id="cashier-simulator-modal" class="bottom-sheet max-w-lg mx-auto p-5">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">🏪</span>
+        <div>
+          <div class="text-sm font-extrabold text-white">Store POS Cashier Counter</div>
+          <div class="text-[10px] text-slate-400">Simulate cashier verifying OTP & deducting customer reward points</div>
+        </div>
+      </div>
+      <button onclick="closeModal('cashier-simulator-modal')" class="text-slate-400 hover:text-white text-lg">✕</button>
+    </div>
+
+    <div class="space-y-3.5">
+      <div>
+        <label class="block text-xs font-bold text-slate-300 mb-1">Customer 6-Digit Counter OTP or Token</label>
+        <div class="flex gap-2">
+          <input id="cashier-code-input" type="text" placeholder="e.g. 849201" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-amber-400 font-mono font-bold focus:outline-none focus:border-emerald-500">
+          <button onclick="if(state.activeRedemptionToken) document.getElementById('cashier-code-input').value = state.activeRedemptionToken.otp;" class="px-3 py-2 bg-slate-800 text-slate-300 font-bold text-xs rounded-xl hover:bg-slate-700">
+            Auto-Fill OTP
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-300 mb-1">Current Sale / Bill Amount (₹)</label>
+        <input id="cashier-bill-amount" type="number" step="0.01" value="2500" placeholder="e.g. 2500" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white font-extrabold focus:outline-none focus:border-emerald-500">
+        <div class="text-[10px] text-slate-500 mt-1">Rule Engine will verify if bill meets 10x purchase rule or firm minimums.</div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-300 mb-1">Cashier Checkout Notes (Optional)</label>
+        <input id="cashier-notes" type="text" value="Counter 01 - Cash Checkout" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-emerald-500">
+      </div>
+
+      <button onclick="submitCashierVerification()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-sm rounded-xl shadow transition">
+        Verify & Deduct Points Instantly &rarr;
+      </button>
+
+      <div id="cashier-result-box" class="hidden"></div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 2: FIRM DETAIL SPACE ==================== -->
+  <div id="firm-detail-sheet" class="bottom-sheet max-w-lg mx-auto p-5">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+      <div class="flex items-center gap-3">
+        <div id="firm-detail-header-color" class="w-10 h-10 rounded-2xl flex items-center justify-center font-black text-white text-base">
+          F
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-extrabold text-white" id="firm-detail-title">Firm Name</span>
+            <span id="firm-detail-badge" class="pill-badge bg-emerald-500/20 text-emerald-400 text-[9px]"></span>
+          </div>
+          <div class="text-[11px] text-slate-400" id="firm-detail-category">Category</div>
+        </div>
+      </div>
+      <button onclick="closeModal('firm-detail-sheet')" class="text-slate-400 hover:text-white text-lg">✕</button>
+    </div>
+
+    <div class="text-xs text-slate-300 mb-3" id="firm-detail-tagline">Tagline</div>
+    <div class="text-[11px] text-slate-400 mb-4 flex items-center gap-1">
+      <span>📍</span> <span id="firm-detail-address">Address</span>
+    </div>
+
+    <!-- Specific Firm Business Rules -->
+    <div class="mb-4">
+      <div class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Store Specific Reward Rules</div>
+      <div id="firm-detail-rules"></div>
+    </div>
+
+    <!-- Customer Batches at this Firm -->
+    <div class="mb-4">
+      <div class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Your Batches at this Store</div>
+      <div id="firm-detail-customer-batches"></div>
+    </div>
+
+    <!-- Targeted Store Deals & Ads -->
+    <div class="mb-4">
+      <div class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Live Store Offers & Advertisements</div>
+      <div id="firm-detail-offers"></div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 3: INTERACTIVE SCRATCH CARD ==================== -->
+  <div id="scratch-modal" class="bottom-sheet max-w-lg mx-auto p-5 text-center">
+    <div class="flex items-center justify-between pb-2 border-b border-slate-800 mb-3">
+      <div class="text-sm font-extrabold text-white" id="scratch-modal-title">Mystery Reward Drop</div>
+      <button onclick="closeModal('scratch-modal')" class="text-slate-400 hover:text-white text-lg">✕</button>
+    </div>
+
+    <div class="text-xs text-slate-400 mb-3">Scratch below with your finger or mouse to claim bonus points into your wallet!</div>
+
+    <div class="scratch-card-box mx-auto max-w-sm mb-4">
+      <!-- Revealed prize underneath -->
+      <div class="text-center">
+        <div class="text-3xl mb-1">🎉</div>
+        <div class="text-2xl font-black text-amber-950" id="scratch-revealed-points">+₹25.00</div>
+        <div class="text-xs font-extrabold text-amber-900 uppercase tracking-wide">Wallet Bonus Cash!</div>
+      </div>
+      <!-- Canvas overlay -->
+      <canvas id="scratch-canvas" class="scratch-canvas"></canvas>
+    </div>
+
+    <button onclick="closeModal('scratch-modal'); switchTab('home');" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition">
+      Close & View Wallet
+    </button>
+  </div>
+
+  <!-- ==================== MODAL 4: ES PRO ERP WEBHOOK SANDBOX ==================== -->
+  <div id="erp-simulator-modal" class="bottom-sheet max-w-lg mx-auto p-5">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">⚡</span>
+        <div>
+          <div class="text-sm font-extrabold text-white">ES PRO ERP Integration Sandbox</div>
+          <div class="text-[10px] text-slate-400">Simulate POS billing event emitting profit-share reward points</div>
+        </div>
+      </div>
+      <button onclick="closeModal('erp-simulator-modal')" class="text-slate-400 hover:text-white text-lg">✕</button>
+    </div>
+
+    <div class="space-y-3 text-xs">
+      <div>
+        <label class="block font-bold text-slate-300 mb-1">Billing Firm / Business Source</label>
+        <select id="erp-sim-firm" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white">
+          <option value="firm-es-pro">ES Supermarket & Department Store (ES PRO)</option>
+          <option value="firm-petro">Highway Petroleum & CNG Hub</option>
+          <option value="firm-cafe">Bean & Bloom Artisan Café</option>
+          <option value="firm-nexus">Nexus Tech & Smartphone Lounge</option>
+          <option value="firm-vogue">Urban Vogue Fashion Boutique</option>
+          <option value="firm-aura">Aura Ayurveda & Wellness Care</option>
+        </select>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block font-bold text-slate-300 mb-1">Invoice Bill Total (₹)</label>
+          <input id="erp-sim-bill" type="number" value="2800" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-300 mb-1">Net Profit Margin (₹)</label>
+          <input id="erp-sim-profit" type="number" value="400" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono">
+        </div>
+      </div>
+
+      <div>
+        <label class="block font-bold text-slate-300 mb-1">Payment Mode (Ready vs Credit)</label>
+        <select id="erp-sim-paymode" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white">
+          <option value="cash">Cash / Ready Payment (Eligible)</option>
+          <option value="upi">UPI / Online / Bank (Eligible)</option>
+          <option value="credit">Credit / Udhaar (Zero Points Policy)</option>
+        </select>
+        <div class="text-[10px] text-slate-500 mt-0.5">ES PRO Safeguard: Credit sales generate ₹0.00 rewards.</div>
+      </div>
+
+      <button onclick="simulateEsProBilling()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow transition">
+        Execute POST /api/v1/erp/issue-reward &rarr;
+      </button>
+
+      <div id="erp-sim-log" class="hidden"></div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 5: PHONE LOGIN & MULTI-FIRM NAME RESOLUTION ==================== -->
+  <div id="login-modal" class="bottom-sheet max-w-lg mx-auto p-5">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">📱</span>
+        <div>
+          <div class="text-sm font-extrabold text-white">Centralized Phone Sign-In</div>
+          <div class="text-[10px] text-slate-400">One Mobile Number • Multi-Firm Integration • OTP Verification</div>
+        </div>
+      </div>
+      <button onclick="closeModal('login-modal')" class="text-slate-400 hover:text-white text-lg">✕</button>
+    </div>
+
+    <!-- STEP 1: ENTER PHONE NUMBER -->
+    <div id="login-step-phone" class="space-y-3.5 text-xs">
+      <div>
+        <label class="block font-bold text-slate-300 mb-1.5">Enter Registered Mobile Number</label>
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 font-bold text-xs">
+            🇮🇳 +91
+          </div>
+          <input id="login-phone-input" type="tel" maxlength="10" placeholder="e.g. 9876543210" class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-16 pr-3 py-2.5 text-base text-white font-mono font-bold focus:outline-none focus:border-indigo-500">
+        </div>
+        <div class="text-[10px] text-slate-500 mt-1">We will check all connected stores where this number is registered.</div>
+      </div>
+
+      <!-- Quick Test Customer Buttons -->
+      <div>
+        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Quick Switch Test Profiles:</div>
+        <div class="grid grid-cols-3 gap-1.5">
+          <button onclick="prefillLoginPhone('9876543210')" class="px-2 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-left border border-slate-700/60 transition">
+            <div class="font-bold text-white text-[11px]">Rahul S.</div>
+            <div class="text-[9px] text-indigo-400 font-mono">9876543210</div>
+            <div class="text-[8px] text-amber-400">4 Name Variations!</div>
+          </button>
+          <button onclick="prefillLoginPhone('9847012345')" class="px-2 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-left border border-slate-700/60 transition">
+            <div class="font-bold text-white text-[11px]">Priya N.</div>
+            <div class="text-[9px] text-indigo-400 font-mono">9847012345</div>
+            <div class="text-[8px] text-emerald-400">3 Store Profiles</div>
+          </button>
+          <button onclick="prefillLoginPhone('9895067890')" class="px-2 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-left border border-slate-700/60 transition">
+            <div class="font-bold text-white text-[11px]">Shafi M.</div>
+            <div class="text-[9px] text-indigo-400 font-mono">9895067890</div>
+            <div class="text-[8px] text-emerald-400">3 Store Profiles</div>
+          </button>
+        </div>
+      </div>
+
+      <button id="btn-request-otp" onclick="requestOtpFlow()" class="w-full py-3 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-extrabold text-xs rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+        <span>Request OTP & Fetch Profiles</span>
+        <span>&rarr;</span>
+      </button>
+    </div>
+
+    <!-- STEP 2: OTP VERIFICATION & MULTI-FIRM NAME CONFLICT RESOLUTION -->
+    <div id="login-step-otp" class="space-y-3.5 text-xs hidden">
+      <!-- Target Phone Banner -->
+      <div class="p-2.5 rounded-xl bg-indigo-950/50 border border-indigo-500/30 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-base">📲</span>
+          <div>
+            <div class="text-[10px] text-slate-400">OTP Sent to:</div>
+            <div class="font-mono font-bold text-white text-xs" id="otp-target-phone">+91 9876543210</div>
+          </div>
+        </div>
+        <button onclick="backToPhoneStep()" class="text-[11px] font-bold text-indigo-400 hover:text-indigo-300">Change Phone</button>
+      </div>
+
+      <!-- OTP Input with Auto-Fill helper -->
+      <div>
+        <div class="flex items-center justify-between mb-1.5">
+          <label class="font-bold text-slate-300">Enter 6-Digit OTP</label>
+          <button id="btn-autofill-otp" onclick="autoFillDemoOtp()" class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition">
+            Auto-Fill OTP: <span id="demo-otp-badge" class="font-mono">------</span>
+          </button>
+        </div>
+        <input id="login-otp-input" type="text" maxlength="6" placeholder="• • • • • •" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-center text-xl tracking-[0.5em] text-amber-400 font-mono font-black focus:outline-none focus:border-amber-400">
+      </div>
+
+      <!-- Multi-Firm Name Resolution Section -->
+      <div id="name-conflict-resolution-box" class="p-3.5 rounded-2xl bg-slate-900/90 border border-amber-500/30">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-base">🔀</span>
+          <div>
+            <div class="font-bold text-white text-xs">Multi-Store Name Conflict Detected</div>
+            <div class="text-[10px] text-slate-400">This phone was registered with different names across partner firms.</div>
+          </div>
+        </div>
+
+        <div class="text-[10px] text-amber-300/90 mb-2.5">
+          Select your preferred centralized display name, or customize below:
+        </div>
+
+        <!-- Dynamic Store Name Radio Options -->
+        <div id="firm-names-radio-container" class="space-y-1.5 mb-2.5">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Custom Name Input Option -->
+        <div class="pt-2 border-t border-slate-800">
+          <label class="block text-[10px] font-bold text-slate-400 mb-1">Or Type Custom Centralized Name:</label>
+          <input id="login-custom-name-input" type="text" placeholder="Enter preferred name" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-semibold focus:outline-none focus:border-indigo-500">
+        </div>
+      </div>
+
+      <button id="btn-verify-otp" onclick="verifyOtpFlow()" class="w-full py-3 bg-gradient-to-r from-emerald-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white font-extrabold text-xs rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+        <span>Verify OTP & Centralize Profile</span>
+        <span>&rarr;</span>
+      </button>
+
+      <div class="text-center">
+        <button onclick="requestOtpFlow()" class="text-[11px] font-bold text-slate-400 hover:text-white transition">Resend OTP</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: RETURN / SURRENDER OF GOODS ==================== -->
+  <div id="return-simulator-modal" class="bottom-sheet max-w-lg mx-auto p-5">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">↩️</span>
+        <div>
+          <div class="text-sm font-extrabold text-white">Record Goods Surrender / Return</div>
+          <div class="text-[10px] text-slate-400">Issue return credit slip & adjust customer business ledger</div>
+        </div>
+      </div>
+      <button onclick="closeModal('return-simulator-modal')" class="text-slate-400 hover:text-white text-lg">✕</button>
+    </div>
+
+    <div class="space-y-3 text-xs">
+      <div>
+        <label class="block font-bold text-slate-300 mb-1">Store / Firm Where Surrendered</label>
+        <select id="return-firm-select" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-semibold">
+          <option value="firm-es-pro">ES Supermarket & Department Store (ES PRO)</option>
+          <option value="firm-petro">Highway Petroleum & CNG Hub</option>
+          <option value="firm-cafe">Bean & Bloom Artisan Café</option>
+          <option value="firm-nexus">Nexus Tech & Smartphone Lounge</option>
+          <option value="firm-vogue">Urban Vogue Fashion Boutique</option>
+          <option value="firm-aura">Aura Ayurveda & Wellness Care</option>
+        </select>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block font-bold text-slate-300 mb-1">Original Invoice Ref #</label>
+          <input id="return-orig-invoice" type="text" value="INV-ES-2026-9821" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-300 mb-1">Return Amount (₹)</label>
+          <input id="return-amount-input" type="number" step="0.01" value="350.00" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono font-bold">
+        </div>
+      </div>
+
+      <div>
+        <label class="block font-bold text-slate-300 mb-1">Surrender Reason / Notes</label>
+        <input id="return-reason-input" type="text" value="Customer surrendered unopened grocery items" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white">
+      </div>
+
+      <button onclick="submitGoodsReturn()" class="w-full py-2.5 bg-gradient-to-r from-amber-600 to-rose-600 hover:from-amber-500 hover:to-rose-500 text-white font-extrabold text-xs rounded-xl shadow-lg transition">
+        Record Return & Adjust Ledger &rarr;
+      </button>
+
+      <div id="return-result-log" class="hidden"></div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 6: CUSTOMER REGISTERED ID PASS ==================== -->
+  <div id="customer-id-card-modal" class="bottom-sheet max-w-lg mx-auto p-5">
+    <div class="flex items-center justify-between pb-2 border-b border-slate-800 mb-3">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">🪪</span>
+        <div>
+          <div class="text-sm font-extrabold text-white">Customer Registered ID Pass</div>
+          <div class="text-[10px] text-slate-400">Official Centralized Reward Identity • EEYES PRO Ecosystem</div>
+        </div>
+      </div>
+      <button onclick="closeModal('customer-id-card-modal')" class="text-slate-400 hover:text-white text-lg">✕</button>
+    </div>
+
+    <!-- Digital Membership Card Preview -->
+    <div id="digital-id-card-canvas" class="relative rounded-3xl p-5 text-white shadow-2xl overflow-hidden mb-4 border border-amber-500/40" style="background: linear-gradient(135deg, #1E1B4B 0%, #0F172A 40%, #064E3B 100%);">
+      <!-- Decorative metallic shine -->
+      <div class="absolute -right-10 -bottom-10 w-44 h-44 rounded-full bg-emerald-500/10 pointer-events-none blur-2xl"></div>
+      
+      <div class="flex items-start justify-between mb-4">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-400/30">
+              EEYES PRO VERIFIED
+            </span>
+            <span id="card-modal-vip" class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-400/30">
+              Gold VIP
+            </span>
+          </div>
+          <div class="text-lg font-black text-white mt-1.5" id="card-modal-name">Rahul Sharma</div>
+          <div class="text-xs font-mono text-slate-300" id="card-modal-phone">+91 9876543210</div>
+        </div>
+        <!-- Smart Chip Icon -->
+        <div class="w-11 h-8 rounded-lg bg-gradient-to-br from-amber-300 via-amber-400 to-amber-600 p-1 flex flex-col justify-between shadow">
+          <div class="w-full h-1 bg-amber-800/30 rounded-xs"></div>
+          <div class="w-full h-1.5 bg-amber-800/20 rounded-xs"></div>
+          <div class="w-full h-1 bg-amber-800/30 rounded-xs"></div>
+        </div>
+      </div>
+
+      <!-- Centralized Registered ID -->
+      <div class="bg-black/40 rounded-2xl p-3 border border-white/10 mb-3 flex items-center justify-between">
+        <div>
+          <div class="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Registered OmniPoints ID</div>
+          <div class="text-sm font-mono font-black text-amber-400 tracking-wider" id="card-modal-reg-id">EEYES-OP-9876543210</div>
+        </div>
+        <button onclick="navigator.clipboard.writeText(document.getElementById('card-modal-reg-id').innerText); showToast('Copied ID!');" class="text-[10px] font-bold text-slate-300 hover:text-white bg-white/10 px-2 py-1 rounded-lg">
+          Copy 📋
+        </button>
+      </div>
+
+      <!-- Live Balance & Multi-Firm Categories -->
+      <div class="grid grid-cols-2 gap-2 mb-3">
+        <div class="bg-black/30 rounded-xl p-2.5 border border-white/5">
+          <div class="text-[9px] text-slate-400 uppercase font-semibold">Centralized Balance</div>
+          <div class="text-base font-black text-emerald-400" id="card-modal-balance">₹960.00</div>
+          <div class="text-[9px] text-slate-400">(<span id="card-modal-points">960</span> Reward Points)</div>
+        </div>
+        <div class="bg-black/30 rounded-xl p-2.5 border border-white/5">
+          <div class="text-[9px] text-slate-400 uppercase font-semibold">Value Exchange</div>
+          <div class="text-sm font-bold text-white mt-0.5">1 Point = ₹1.00</div>
+          <div class="text-[9px] text-indigo-300">6 Connected Categories</div>
+        </div>
+      </div>
+
+      <!-- Scannable Barcode & QR Code Section -->
+      <div class="bg-white rounded-2xl p-3 text-slate-900 text-center flex flex-col items-center justify-center">
+        <!-- SVG Barcode -->
+        <div id="card-modal-barcode-container" class="w-full overflow-hidden flex justify-center py-1"></div>
+        <div class="text-[10px] font-mono font-bold tracking-widest text-slate-700 mt-1" id="card-modal-barcode-digits">OP9876543210</div>
+        <div class="text-[9px] text-slate-500 mt-0.5">Scan at any EEYES PRO Retail or Partner Firm POS</div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-2 gap-2 mb-3">
+      <button onclick="shareCardToWhatsApp()" class="py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow transition">
+        <span>📲</span> Share on WhatsApp
+      </button>
+      <button onclick="switchTab('redeem'); closeModal('customer-id-card-modal');" class="py-2.5 px-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow transition">
+        <span>💳</span> Redeem at Counter
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 7: REGISTER NEW CUSTOMER (EEYES PRO) ==================== -->
+  <div id="customer-registration-modal" class="bottom-sheet max-w-lg mx-auto p-5">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">➕</span>
+        <div>
+          <div class="text-sm font-extrabold text-white">Enroll Customer in EEYES PRO Network</div>
+          <div class="text-[10px] text-slate-400">Generate Centralized Registered ID & OmniPoints Wallet</div>
+        </div>
+      </div>
+      <button onclick="closeModal('customer-registration-modal')" class="text-slate-400 hover:text-white text-lg">✕</button>
+    </div>
+
+    <div class="space-y-3 text-xs">
+      <div>
+        <label class="block font-bold text-slate-300 mb-1">Customer 10-Digit Mobile Phone <span class="text-rose-500">*</span></label>
+        <input id="enroll-phone" type="tel" maxlength="10" placeholder="e.g. 9847123456" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white font-mono font-bold focus:outline-none focus:border-emerald-500">
+        <div class="text-[10px] text-slate-500 mt-0.5">Used as Primary Key in EEYES PRO ERP & Centralized Wallet.</div>
+      </div>
+
+      <div>
+        <label class="block font-bold text-slate-300 mb-1">Customer Full Name <span class="text-rose-500">*</span></label>
+        <input id="enroll-name" type="text" placeholder="e.g. Haris K.P" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-semibold focus:outline-none focus:border-emerald-500">
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block font-bold text-slate-300 mb-1">Membership Tier</label>
+          <select id="enroll-tier" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white">
+            <option value="Silver">Silver Member</option>
+            <option value="Gold VIP" selected>Gold VIP</option>
+            <option value="Platinum VIP">Platinum VIP</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-300 mb-1">Welcome Bonus (₹)</label>
+          <input id="enroll-bonus" type="number" value="50" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono">
+        </div>
+      </div>
+
+      <div>
+        <label class="block font-bold text-slate-300 mb-1">Source Partner Store</label>
+        <select id="enroll-source-firm" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white">
+          <option value="firm-es-pro">ES Supermarket & Department Store (EEYES PRO ERP)</option>
+          <option value="firm-petro">Highway Petroleum & CNG Hub</option>
+          <option value="firm-cafe">Bean & Bloom Artisan Café</option>
+          <option value="firm-nexus">Nexus Tech & Smartphone Lounge</option>
+          <option value="firm-vogue">Urban Vogue Fashion Boutique</option>
+          <option value="firm-aura">Aura Ayurveda & Wellness Care</option>
+        </select>
+      </div>
+
+      <button onclick="submitCustomerEnrollment()" class="w-full py-3 bg-gradient-to-r from-emerald-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white font-extrabold text-xs rounded-xl shadow-lg transition">
+        Register Customer & Generate ID Pass &rarr;
+      </button>
+
+      <div id="enroll-result-log" class="hidden"></div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 8: REDEMPTION CLAIM SENT TO STORE ==================== -->
+  <div id="claim-success-modal" class="bottom-sheet max-w-lg mx-auto p-5 text-center">
+    <div class="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 mx-auto flex items-center justify-center text-3xl mb-3 border border-emerald-500/40 animate-bounce">
+      🎉
+    </div>
+    <div class="text-base font-extrabold text-white">റെഡീം റിക്വസ്റ്റ് ബില്ലിംഗ് കൗണ്ടറിലേക്ക് അയച്ചു!</div>
+    <div class="text-xs text-emerald-400 font-semibold mt-0.5">Live Reward Claim Active at Billing Counter</div>
+
+    <div class="mt-4 p-3.5 bg-slate-900 border border-slate-700/80 rounded-2xl text-left text-xs space-y-2">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+        <span class="text-slate-400">Target Store:</span>
+        <span class="font-bold text-white flex items-center gap-1">
+          <span>🏪</span><span id="claim-modal-firm">EEYES Pro Retail & Supermarket</span>
+        </span>
+      </div>
+      <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+        <span class="text-slate-400">Customer:</span>
+        <span class="font-bold text-white" id="claim-modal-customer">Ramesh Supermarket</span>
+      </div>
+      <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+        <span class="text-slate-400">Reward Discount:</span>
+        <span class="text-sm font-black text-emerald-400" id="claim-modal-points">₹400.00 (1 RP = ₹1)</span>
+      </div>
+      <div class="flex justify-between items-center">
+        <span class="text-slate-400">10x Required Bill:</span>
+        <span class="font-bold text-amber-400" id="claim-modal-req-bill">Min ₹4,000.00</span>
+      </div>
+    </div>
+
+    <div class="mt-3.5 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-left text-[11px] text-emerald-300 space-y-1">
+      <div class="font-bold flex items-center gap-1.5 text-white">
+        <span>💡</span><span>എങ്ങനെ പ്രവർത്തിക്കുന്നു (How it works):</span>
+      </div>
+      <p class="leading-relaxed">
+        നിങ്ങളുടെ ഈ റിവാർഡ് റെഡീം ചെയ്യാനുള്ള പ്രോസസ്സ് സ്വാഭാവികമായിട്ടും <strong>EEYES Pro ERP</strong> ബില്ലിംഗ് വിൻഡോയിൽ ഇപ്പോൾ തെളിഞ്ഞു വന്നിട്ടുണ്ട്! കാഷ്യർ <strong>"✨ Click to Redeem"</strong> അമർത്തുമ്പോൾ ഇൻവോയ്സിൽ നിന്നും ഈ തുക കുറയുകയും, തുടർന്ന് വെബ് ആപ്ലിക്കേഷനിലെ നിങ്ങളുടെ വാലറ്റിൽ ഓട്ടോമാറ്റിക്കായി കുറയുകയും ചെയ്യും.
+      </p>
+    </div>
+
+    <button onclick="closeModal('claim-success-modal')" class="w-full mt-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition cursor-pointer">
+      Close & View Wallet
+    </button>
+  </div>
+
+  <!-- ==================== MODAL 9: REDEMPTION COMPLETED NOTIFICATION ==================== -->
+  <div id="redemption-completed-modal" class="bottom-sheet max-w-lg mx-auto p-5 text-center">
+    <div class="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 mx-auto flex items-center justify-center text-3xl mb-3 border border-emerald-500/40">
+      ✅
+    </div>
+    <div class="text-base font-extrabold text-white">ഇൻവോയ്സിൽ നിന്നും റിവാർഡ് കുറച്ചു!</div>
+    <div class="text-xs text-emerald-400 font-semibold mt-0.5">Reward Redeemed & Updated in Web App</div>
+
+    <div class="mt-4 p-3.5 bg-slate-900 border border-emerald-500/40 rounded-2xl text-left text-xs space-y-2">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+        <span class="text-slate-400">Invoice Number:</span>
+        <span class="font-mono font-bold text-white" id="red-done-invoice">INV-2026-1005</span>
+      </div>
+      <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+        <span class="text-slate-400">Store:</span>
+        <span class="font-bold text-white" id="red-done-firm">EEYES Pro Retail</span>
+      </div>
+      <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+        <span class="text-slate-400">Discount Deducted:</span>
+        <span class="text-sm font-black text-emerald-400" id="red-done-points">-₹400.00</span>
+      </div>
+      <div class="flex justify-between items-center">
+        <span class="text-slate-400">Updated Wallet Balance:</span>
+        <span class="font-black text-white" id="red-done-balance">₹1,250.00</span>
+      </div>
+    </div>
+
+    <button onclick="closeModal('redemption-completed-modal')" class="w-full mt-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold text-xs rounded-xl shadow-lg transition cursor-pointer">
+      Done (സരി)
+    </button>
+  </div>
+
+  <!-- ==================== MODAL 10: MERCHANT REDEMPTION APPROVAL REQUEST ==================== -->
+  <div id="merchant-approval-modal" class="bottom-sheet max-w-lg mx-auto p-5 text-center">
+    <div class="w-16 h-16 rounded-3xl bg-gradient-to-tr from-amber-500 via-purple-600 to-indigo-600 mx-auto flex items-center justify-center text-3xl mb-3 shadow-xl border border-white/20 animate-bounce">
+      🎁
+    </div>
+    <div class="text-base font-black text-white">റിവാർഡ് റിഡംപ്ഷൻ റിക്വസ്റ്റ്!</div>
+    <div class="text-xs text-amber-400 font-extrabold mt-0.5" id="mreq-firm-name">EEYES Pro Retail & Supermarket</div>
+    <p class="text-[11px] text-slate-300 mt-2">
+      സ്റ്റോർ കൗണ്ടറിൽ നിന്നും നിങ്ങളുടെ ഇൻവോയ്സിൽ റിവാർഡ് പോയിന്റുകൾ കുറയ്ക്കുന്നതിന് അനുമതി അഭ്യർത്ഥിച്ചിരിക്കുന്നു.
+    </p>
+
+    <div class="mt-4 p-4 bg-slate-900 border-2 border-amber-500/50 rounded-2xl text-left text-xs space-y-2.5 shadow-lg">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+        <span class="text-slate-400 font-medium">ഇൻവോയ്സ് നമ്പർ:</span>
+        <span class="font-mono font-bold text-white text-xs" id="mreq-invoice-no">#INV-2026-0042</span>
+      </div>
+      <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+        <span class="text-slate-400 font-medium">ബില്ലിൽ കുറയ്ക്കാനുള്ള റിവാർഡ്:</span>
+        <span class="font-mono font-black text-emerald-400 text-base" id="mreq-points-val">₹500.00</span>
+      </div>
+      <div class="flex justify-between items-center border-b border-slate-800 pb-2 text-[11px]">
+        <span class="text-slate-400 font-medium">കറന്റ് വാലറ്റ് ബാലൻസ്:</span>
+        <span class="font-mono font-bold text-slate-200" id="mreq-current-bal">₹3,257.66</span>
+      </div>
+      <div class="flex justify-between items-center text-[11px]">
+        <span class="text-indigo-300 font-medium">ഡിഡക്ഷന് ശേഷമുള്ള ബാലൻസ്:</span>
+        <span class="font-mono font-black text-indigo-400 text-xs" id="mreq-after-bal">₹2,757.66</span>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-2 mt-5">
+      <button type="button" onclick="declineMerchantRedemptionRequest()" class="py-3 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs border border-slate-700 transition cursor-pointer">
+        ❌ നിരസിക്കുക (Decline)
+      </button>
+      <button type="button" id="btn-accept-merchant-req" onclick="acceptMerchantRedemptionRequest()" class="py-3 px-3 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white font-black text-xs shadow-lg transition cursor-pointer flex items-center justify-center gap-1.5 transform hover:scale-[1.02]">
+        <span>✅ അക്സെപ്റ്റ് ചെയ്യുക (Accept)</span>
+      </button>
+    </div>
+  </div>
+
+  </main>
+
+  <script src="/static/js/app.js"></script>
+  <script>
+    // Keep local clock updated
+    setInterval(() => {
+      const now = new Date();
+      const hrs = String(now.getHours()).padStart(2, '0');
+      const mins = String(now.getMinutes()).padStart(2, '0');
+      const el = document.getElementById('status-clock');
+      if (el) el.innerText = `${hrs}:${mins}`;
+    }, 1000);
+  </script>
+</body>
+</html>
