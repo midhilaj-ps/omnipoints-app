@@ -1,3 +1,88 @@
+
+// ==================== AI NEURAL NETWORK BACKGROUND ANIMATION ==================== //
+let aiCanvasRunning = false;
+function initAiNeuralCanvas() {
+  const canvas = document.getElementById('ai-neural-canvas');
+  if (!canvas || aiCanvasRunning) return;
+  aiCanvasRunning = true;
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  function resize() {
+    canvas.width = canvas.parentElement ? canvas.parentElement.clientWidth : window.innerWidth;
+    canvas.height = canvas.parentElement ? canvas.parentElement.clientHeight : 520;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const numNodes = 36;
+  const nodes = [];
+  for (let i = 0; i < numNodes; i++) {
+    nodes.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      vx: (Math.random() - 0.5) * 0.7,
+      vy: (Math.random() - 0.5) * 0.7,
+      r: Math.random() * 2.2 + 1.2,
+      alpha: Math.random() * 0.6 + 0.3
+    });
+  }
+
+  function frame() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Neural connections
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const dx = nodes[i].x - nodes[j].x;
+        const dy = nodes[i].y - nodes[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 115) {
+          const lineAlpha = (1 - dist / 115) * 0.38;
+          ctx.beginPath();
+          ctx.moveTo(nodes[i].x, nodes[i].y);
+          ctx.lineTo(nodes[j].x, nodes[j].y);
+          ctx.strokeStyle = `rgba(16, 185, 129, ${lineAlpha})`;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+      }
+    }
+
+    // Glowing nodes
+    for (let i = 0; i < nodes.length; i++) {
+      const n = nodes[i];
+      n.x += n.vx;
+      n.y += n.vy;
+
+      if (n.x < 0 || n.x > canvas.width) n.vx *= -1;
+      if (n.y < 0 || n.y > canvas.height) n.vy *= -1;
+
+      // Outer glow
+      const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r * 3.5);
+      g.addColorStop(0, `rgba(52, 211, 153, ${n.alpha})`);
+      g.addColorStop(0.5, `rgba(99, 102, 241, ${n.alpha * 0.4})`);
+      g.addColorStop(1, 'rgba(15, 23, 42, 0)');
+
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r * 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = g;
+      ctx.fill();
+
+      // Node core
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+      ctx.fillStyle = '#6ee7b7';
+      ctx.fill();
+    }
+
+    requestAnimationFrame(frame);
+  }
+
+  requestAnimationFrame(frame);
+}
+
 /**
  * OmniPoints - Centralized Multi-Firm Customer Reward Wallet
  * Frontend Application Controller
@@ -40,6 +125,7 @@ const state = {
 // Initialize App
 document.addEventListener('DOMContentLoaded', async () => {
   initServiceWorker();
+  initAiNeuralCanvas();
   setupBottomNav();
   await loadFirms();
 
@@ -100,6 +186,8 @@ function showLoginInterface() {
     headerGuest.classList.remove('hidden');
     headerGuest.classList.add('flex');
   }
+  const headerActions = document.getElementById('mobile-header-actions');
+  if (headerActions) headerActions.classList.add('hidden');
   if (btnPass) btnPass.classList.add('hidden');
   if (btnLogout) btnLogout.classList.add('hidden');
 
@@ -143,17 +231,20 @@ async function completeLogin(phone, customerObj = null, doBroadcast = true) {
     headerGuest.classList.add('hidden');
     headerGuest.classList.remove('flex');
   }
+  const headerActions = document.getElementById('mobile-header-actions');
+  if (headerActions) headerActions.classList.remove('hidden');
   if (btnPass) btnPass.classList.remove('hidden');
-  if (btnLogout) {
-    btnLogout.classList.remove('hidden');
-    btnLogout.textContent = '🚪 Logout';
-    btnLogout.onclick = () => logoutCustomer();
+  const btnSettings = document.getElementById('btn-mobile-settings');
+  if (btnSettings) {
+    btnSettings.classList.remove('hidden');
+    btnSettings.innerHTML = `<span class="text-xs">⚙️</span><span>Settings</span>`;
+    btnSettings.onclick = () => openSettingsModal();
   }
 
-  const desktopLogout = document.getElementById('btn-desktop-logout');
-  if (desktopLogout) {
-    desktopLogout.textContent = '🚪 Logout';
-    desktopLogout.onclick = () => logoutCustomer();
+  const desktopSettings = document.getElementById('btn-desktop-settings');
+  if (desktopSettings) {
+    desktopSettings.innerHTML = `<span class="text-xs">⚙️</span> Settings`;
+    desktopSettings.onclick = () => openSettingsModal();
   }
 
   // Load customer data, ledger, batches
@@ -188,7 +279,10 @@ function selectLandingCustomer(phone) {
 
 async function requestLandingOtpFlow() {
   const phoneInput = document.getElementById('landing-phone-input');
-  const phone = phoneInput ? phoneInput.value.trim().replace(/[^0-9]/g, '') : '';
+  let phone = phoneInput ? phoneInput.value.trim().replace(/[^0-9]/g, '') : '';
+  if (phone.length === 12 && phone.startsWith('91')) phone = phone.slice(2);
+  else if (phone.length === 11 && phone.startsWith('0')) phone = phone.slice(1);
+  else if (phone.length > 10) phone = phone.slice(-10);
 
   if (!phone || phone.length < 10) {
     alert('ദയവായി 10 അക്ക മൊബൈൽ നമ്പർ നൽകുക (Please enter valid 10-digit mobile number)');
@@ -211,8 +305,11 @@ async function requestLandingOtpFlow() {
     state.otpSession = {
       phone,
       demoOtp: data.demo_otp || '123456',
+      isNew: data.is_new,
+      isProfileIncomplete: data.is_profile_incomplete,
       distinctNames: data.distinct_names || [],
       firmProfiles: data.firm_profiles || [],
+      existingCustomer: data.existing_customer,
       defaultSelectedName: data.default_selected_name || ''
     };
 
@@ -223,7 +320,7 @@ async function requestLandingOtpFlow() {
     document.getElementById('landing-otp-target-phone').innerText = `+91 ${phone}`;
     document.getElementById('landing-demo-otp-badge').innerText = data.demo_otp;
 
-    // Render Name conflict resolution if divergence
+    // Render Name conflict / merge resolution if divergence
     const conflictBox = document.getElementById('landing-name-conflict-box');
     const radioContainer = document.getElementById('landing-firm-names-radio-container');
     const customInput = document.getElementById('landing-custom-name-input');
@@ -253,7 +350,7 @@ async function requestLandingOtpFlow() {
 
 function autoFillLandingDemoOtp() {
   const otpInput = document.getElementById('landing-otp-input');
-  if (otpInput && state.otpSession.demoOtp) {
+  if (otpInput && state.otpSession && state.otpSession.demoOtp) {
     otpInput.value = state.otpSession.demoOtp;
   }
 }
@@ -276,6 +373,7 @@ async function verifyLandingOtpFlow() {
   const checkedRadio = document.querySelector('input[name="landing_selected_name"]:checked');
   if (checkedRadio) selectedName = checkedRadio.value;
   const customName = document.getElementById('landing-custom-name-input')?.value.trim();
+  const finalChosenName = customName || selectedName || (state.otpSession && state.otpSession.defaultSelectedName) || '';
 
   showLoadingSpinner(true);
   try {
@@ -285,7 +383,7 @@ async function verifyLandingOtpFlow() {
       body: JSON.stringify({
         phone: phone,
         otp: otp,
-        selected_name: selectedName,
+        selected_name: finalChosenName,
         custom_name: customName
       })
     });
@@ -300,7 +398,23 @@ async function verifyLandingOtpFlow() {
     state.summary = data.summary;
     state.businessLedger = data.business_ledger;
 
-    await completeLogin(phone, data.customer, true);
+    // Check if new customer or profile incomplete (address / pincode missing)
+    if (data.is_profile_incomplete || state.otpSession.isNew || !data.customer.address || !data.customer.pincode) {
+      state.pendingProfilePhone = phone;
+      const nameInput = document.getElementById('profile-name-input');
+      const addrInput = document.getElementById('profile-address-input');
+      const cityInput = document.getElementById('profile-city-input');
+      const pinInput = document.getElementById('profile-pincode-input');
+
+      if (nameInput) nameInput.value = data.customer.name || finalChosenName || '';
+      if (addrInput) addrInput.value = data.customer.address || '';
+      if (cityInput) cityInput.value = data.customer.city || '';
+      if (pinInput) pinInput.value = data.customer.pincode || '';
+
+      openModal('profile-setup-modal');
+    } else {
+      await completeLogin(phone, data.customer, true);
+    }
   } catch (err) {
     console.error('Landing OTP verify error:', err);
     alert('Error verifying OTP: ' + err.message);
@@ -309,12 +423,47 @@ async function verifyLandingOtpFlow() {
   }
 }
 
-// Register PWA Service Worker
-function initServiceWorker() {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js')
-      .then(reg => console.log('PWA ServiceWorker registered'))
-      .catch(err => console.log('ServiceWorker registration error:', err));
+async function saveCustomerProfile() {
+  const phone = state.pendingProfilePhone || state.currentPhone || (state.otpSession && state.otpSession.phone);
+  const name = document.getElementById('profile-name-input')?.value.trim();
+  const address = document.getElementById('profile-address-input')?.value.trim();
+  const city = document.getElementById('profile-city-input')?.value.trim();
+  const pincode = document.getElementById('profile-pincode-input')?.value.trim();
+
+  if (!name) {
+    alert('ദയവായി പേര് നൽകുക (Please enter Full Name)');
+    return;
+  }
+  if (!address) {
+    alert('ദയവായി മേൽവിലാസം നൽകുക (Please enter Address)');
+    return;
+  }
+  if (!pincode || pincode.length < 6) {
+    alert('ദയവായി 6 അക്ക പിൻകോഡ് നൽകുക (Please enter 6-digit PIN Code)');
+    return;
+  }
+
+  showLoadingSpinner(true);
+  try {
+    const res = await fetch('/api/customer/update-profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, name, address, city, pincode })
+    });
+    const data = await res.json();
+    if (data.success && data.customer) {
+      state.customer = data.customer;
+      closeModal('profile-setup-modal');
+      await completeLogin(phone, data.customer, true);
+      showToast('🎉 പ്രൊഫൈൽ വിജയകരമായി അപ്‌ഡേറ്റ് ചെയ്തു!');
+    } else {
+      alert(data.message || 'Failed to update profile');
+    }
+  } catch (e) {
+    console.error(e);
+    alert('Error saving profile');
+  } finally {
+    showLoadingSpinner(false);
   }
 }
 
@@ -326,7 +475,7 @@ function setupPollSync() {
       await refreshWalletSilent();
       await checkPendingMerchantRequest(state.currentPhone);
     }
-  }, 3000);
+  }, 1500);
 }
 
 // ----------------- MERCHANT REDEMPTION APPROVAL CONTROLLER ----------------- //
@@ -447,6 +596,7 @@ async function loadFirms() {
     if (data.success) {
       state.firms = data.firms;
       renderFirmsList();
+      if (typeof renderHomeStoresPreview === "function") renderHomeStoresPreview();
       populateRedeemFirmSelect();
     }
   } catch (err) {
@@ -611,6 +761,7 @@ function updateUI() {
   renderBatchesList();
   renderScratchCardPreview();
   renderTransactionsList();
+  renderHomeStoresPreview();
 }
 
 function updateWalletBalanceDisplays() {
@@ -781,53 +932,185 @@ function renderBatchesList() {
 
 // Render Participating Firms Tab
 function renderFirmsList(category = 'ALL') {
+  filterFirmsByCategory(category);
+}
+
+function filterFirmsByCategory(category = 'ALL', btn = null) {
+  if (btn) {
+    document.querySelectorAll('.firms-filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  } else {
+    document.querySelectorAll('.firms-filter-btn').forEach(b => {
+      const bCat = b.getAttribute('data-cat') || '';
+      if (bCat === category || (category === 'ALL' && bCat === 'ALL')) {
+        b.classList.add('active');
+      } else {
+        b.classList.remove('active');
+      }
+    });
+  }
+
+  searchFirms();
+}
+
+async function searchFirms() {
+  if (!state.firms || state.firms.length === 0) {
+    await loadFirms();
+  }
+  const query = (document.getElementById('firm-search-input')?.value || '').trim().toLowerCase();
+  const activeBtn = document.querySelector('.firms-filter-btn.active');
+  const cat = activeBtn ? (activeBtn.getAttribute('data-cat') || 'ALL') : 'ALL';
+
+  let list = state.firms || [];
+  if (cat !== 'ALL') {
+    list = list.filter(f => (f.category || '').toUpperCase().includes(cat) || (cat === 'SUPERMARKET' && (f.name || '').toUpperCase().includes('SUPERMARKET')));
+  }
+
+  if (query) {
+    list = list.filter(f => 
+      (f.name || '').toLowerCase().includes(query) ||
+      (f.category || '').toLowerCase().includes(query) ||
+      (f.address || '').toLowerCase().includes(query) ||
+      (f.tagline || '').toLowerCase().includes(query)
+    );
+  }
+
+  renderFirmsCustomList(list);
+}
+
+function renderFirmsCustomList(list) {
   const container = document.getElementById('firms-full-list');
   if (!container) return;
 
-  const filtered = category === 'ALL' 
-    ? state.firms 
-    : state.firms.filter(f => f.category.toUpperCase().includes(category) || (category === 'RETAIL' && f.is_es_pro));
+  if (!list || list.length === 0) {
+    container.innerHTML = `
+      <div class="p-6 text-center text-slate-400 glass-card rounded-2xl">
+        <div class="text-3xl mb-2">🔍</div>
+        <div class="text-xs font-bold text-white">സ്റ്റോറുകൾ കണ്ടെത്തിയില്ല</div>
+        <div class="text-[10px] mt-1 text-slate-400">മറ്റൊരു കാറ്റഗറിയോ പേരോ നൽകി വീണ്ടും തിരയുക</div>
+      </div>
+    `;
+    return;
+  }
 
-  container.innerHTML = filtered.map(f => {
+  container.innerHTML = list.map(f => {
+    let firmPoints = 0;
+    if (state.batches && state.batches.length > 0) {
+      firmPoints = state.batches
+        .filter(b => b.firm_id === f.id && b.points_remaining > 0)
+        .reduce((sum, b) => sum + parseFloat(b.points_remaining || 0), 0);
+    }
+
+    const icon = f.category_icon === 'fuel' ? '⛽' : (f.category_icon === 'coffee' ? '☕' : (f.category_icon === 'shopping-basket' ? '🧺' : '🛒'));
+
     return `
-      <div onclick="openFirmDetailModal('${f.id}')" class="glass-card p-4 mb-3 cursor-pointer hover:border-indigo-500/40 transition-all">
+      <div class="glass-card p-4 mb-3 rounded-2xl border border-slate-700/70 hover:border-emerald-500/50 transition-all shadow-lg">
         <div class="flex items-center gap-3">
-          <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-lg font-black text-white shadow-lg" style="background-color: ${f.theme_color}">
-            ${f.name.charAt(0)}
+          <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-black text-white shadow-md border border-white/10" style="background-color: ${f.theme_color}">
+            ${icon}
           </div>
           <div class="flex-1 min-w-0">
-            <div class="flex items-center justify-between">
-              <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-400">${f.category}</span>
-              ${f.is_es_pro ? '<span class="pill-badge bg-emerald-500/20 text-emerald-400">ES PRO ERP</span>' : ''}
+            <div class="flex items-center justify-between mb-0.5">
+              <span class="text-[10px] font-extrabold uppercase tracking-wider text-emerald-400">${f.category}</span>
+              ${f.is_es_pro ? '<span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full text-[9px] font-black border border-emerald-500/30">EEYES PRO</span>' : ''}
             </div>
-            <div class="text-sm font-bold text-white truncate">${f.name}</div>
-            <div class="text-xs text-slate-400 truncate mt-0.5">${f.tagline}</div>
+            <div class="text-sm font-extrabold text-white truncate">${f.name}</div>
+            <div class="text-[11px] text-slate-400 truncate">${f.address || f.tagline}</div>
           </div>
         </div>
 
-        <!-- Rule snippet -->
-        <div class="mt-3 bg-slate-900/60 rounded-xl p-2.5 text-[11px] text-slate-300 flex items-start gap-2">
-          <span class="text-amber-400">📜</span>
-          <div class="flex-1">
-            <span class="font-bold text-slate-200">Redemption Policy:</span> ${f.rule_summary}
-          </div>
+        <!-- Store Rule -->
+        <div class="mt-2.5 p-2 rounded-xl bg-slate-900/90 border border-slate-800 text-[11px] text-slate-300 flex items-center gap-2">
+          <span>📜</span>
+          <span class="truncate"><strong>റൂൾ:</strong> ${f.rule_summary || '10x പർച്ചേസ് റൂൾ • 7 ദിവസത്തെ വാലിഡിറ്റി'}</span>
         </div>
 
-        <!-- Offers preview count -->
-        <div class="mt-2 flex items-center justify-between text-[11px] text-slate-400">
-          <span class="text-emerald-400 font-semibold">🎉 ${f.offers ? f.offers.length : 0} Live Offers & Ads</span>
-          <span class="text-indigo-400 font-bold">View Store Space &rarr;</span>
+        <!-- Customer Points in this firm & Batches Button -->
+        <div class="mt-3 flex items-center justify-between gap-2">
+          <div class="text-[11px]">
+            <span class="text-slate-400">ലഭ്യമായ റിവാർഡ്:</span>
+            <span class="font-mono font-black text-emerald-400 text-xs ml-1">₹${firmPoints.toFixed(2)}</span>
+          </div>
+          <button type="button" onclick="openStoreBatchRulesModal('${f.id}')" class="py-2 px-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs rounded-xl shadow transition cursor-pointer flex items-center gap-1.5 transform hover:scale-[1.02]">
+            <span>📋 ബാച്ചുകളും റൂളുകളും</span>
+            <span>➔</span>
+          </button>
         </div>
       </div>
     `;
   }).join('');
 }
 
-// Filter Firms by Chip
-function filterFirmsByCategory(category, btn) {
-  document.querySelectorAll('.firms-filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderFirmsList(category);
+async function openStoreBatchRulesModal(firmId) {
+  showLoadingSpinner(true);
+  try {
+    const phone = state.currentPhone || '';
+    const res = await fetch(`/api/firm/${firmId}/batches?phone=${phone}`);
+    const data = await res.json();
+    if (!data.success) {
+      alert('Could not load store details');
+      return;
+    }
+
+    const firm = data.firm;
+    const nameEl = document.getElementById('smodal-firm-name');
+    const badgeEl = document.getElementById('smodal-firm-badge');
+    const iconEl = document.getElementById('smodal-icon');
+    const ptsEl = document.getElementById('smodal-total-pts');
+    const batchesList = document.getElementById('smodal-batches-list');
+
+    if (nameEl) nameEl.textContent = firm.name;
+    if (badgeEl) badgeEl.textContent = firm.badge || firm.category;
+    if (iconEl) iconEl.textContent = firm.category_icon === 'fuel' ? '⛽' : (firm.category_icon === 'coffee' ? '☕' : '🛒');
+    if (ptsEl) ptsEl.textContent = `₹${parseFloat(data.total_points || 0).toFixed(2)} ലഭ്യമാണ് (${data.total_batches || 0} ബാച്ചുകൾ)`;
+
+    if (batchesList) {
+      if (!data.batches || data.batches.length === 0) {
+        batchesList.innerHTML = `
+          <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 text-center text-xs text-slate-400">
+            നിങ്ങൾക്ക് ഈ സ്റ്റോറിൽ നിലവിൽ ആക്റ്റീവ് ബാച്ചുകൾ ഒന്നും ലഭ്യമല്ല. അടുത്ത പർച്ചേസിൽ റിവാർഡ് പോയിന്റുകൾ ലഭിക്കുന്നതാണ്!
+          </div>
+        `;
+      } else {
+        batchesList.innerHTML = data.batches.map(b => {
+          const isExpiring = (b.days_left <= 2);
+          const isMaturingTomorrow = b.is_maturing_tomorrow;
+          return `
+            <div class="p-3.5 rounded-2xl bg-slate-950 border ${isExpiring ? 'border-rose-500/50' : 'border-slate-800'} space-y-2">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-mono font-bold text-white">#${b.invoice_no || b.id}</span>
+                  ${isMaturingTomorrow ? '<span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-500/20 text-amber-400 border border-amber-500/30">⏳ മെച്ചൂരിറ്റി നാളെ</span>' : '<span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">✅ ലഭ്യമാണ്</span>'}
+                </div>
+                <span class="text-sm font-black text-emerald-400 font-mono">₹${parseFloat(b.points_remaining).toFixed(2)}</span>
+              </div>
+              <div class="grid grid-cols-2 gap-2 text-[10px] text-slate-300 bg-slate-900/60 p-2 rounded-xl">
+                <div>
+                  <span class="text-slate-400">ലഭിച്ച തീയതി:</span> <span class="text-white font-medium">${b.earned_date ? b.earned_date.slice(0, 10) : 'N/A'}</span>
+                </div>
+                <div>
+                  <span class="text-slate-400">മെച്ചൂരിറ്റി:</span> <span class="${isMaturingTomorrow ? 'text-amber-400 font-bold' : 'text-emerald-400 font-bold'}">${isMaturingTomorrow ? 'നാളെ 12:00 AM' : 'ഇന്ന് റെഡീം ചെയ്യാം'}</span>
+                </div>
+                <div>
+                  <span class="text-slate-400">എക്സ്പയറി:</span> <span class="${isExpiring ? 'text-rose-400 font-bold' : 'text-slate-300'}">${b.expiry_date ? b.expiry_date.slice(0, 10) : 'N/A'} (${b.days_left} ദിവസം ബാക്കി)</span>
+                </div>
+                <div>
+                  <span class="text-slate-400">10x മിനിമം ബിൽ:</span> <span class="text-amber-300 font-bold">₹${parseFloat(b.required_bill_to_redeem || 0).toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    openModal('store-batch-rules-modal');
+  } catch (err) {
+    console.error('Error opening store batches modal:', err);
+    alert('Error loading store batches');
+  } finally {
+    showLoadingSpinner(false);
+  }
 }
 
 // Open Firm Detail Modal
@@ -1586,7 +1869,7 @@ function showToast(msg) {
   setTimeout(() => {
     toast.classList.remove('opacity-100');
     setTimeout(() => toast.classList.add('hidden'), 300);
-  }, 3000);
+  }, 1500);
 }
 
 // Confetti Particle Effect
@@ -2431,3 +2714,230 @@ const LiveSync = {
     }, 1200);
   }
 };
+
+function searchHomeFirms() {
+  const query = (document.getElementById('home-firm-search-input')?.value || '').trim().toLowerCase();
+  const activeBtn = document.querySelector('.firms-filter-btn.active');
+  const cat = activeBtn ? (activeBtn.getAttribute('data-cat') || 'ALL') : 'ALL';
+
+  let list = state.firms || [];
+  if (cat !== 'ALL') {
+    list = list.filter(f => (f.category || '').toUpperCase().includes(cat) || (cat === 'SUPERMARKET' && (f.name || '').toUpperCase().includes('SUPERMARKET')));
+  }
+
+  if (query) {
+    list = list.filter(f => 
+      (f.name || '').toLowerCase().includes(query) ||
+      (f.category || '').toLowerCase().includes(query) ||
+      (f.address || '').toLowerCase().includes(query) ||
+      (f.tagline || '').toLowerCase().includes(query)
+    );
+  }
+
+  renderHomeStoresPreview(list);
+}
+
+function renderHomeStoresPreview(customList = null) {
+  const container = document.getElementById('home-stores-preview-container');
+  if (!container) return;
+
+  if ((!state.firms || state.firms.length === 0) && customList === null) {
+    loadFirms().then(() => renderHomeStoresPreview());
+    return;
+  }
+
+  const list = customList !== null ? customList : (state.firms || []);
+  if (list.length === 0) {
+    container.innerHTML = `
+      <div class="p-4 text-center text-slate-400 bg-slate-950 rounded-2xl border border-slate-800 text-xs">
+        സ്റ്റോറുകൾ കണ്ടെത്തിയില്ല
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = list.slice(0, 4).map(f => {
+    let firmPoints = 0;
+    if (state.batches && state.batches.length > 0) {
+      firmPoints = state.batches
+        .filter(b => b.firm_id === f.id && b.points_remaining > 0)
+        .reduce((sum, b) => sum + parseFloat(b.points_remaining || 0), 0);
+    }
+    const icon = f.category_icon === 'fuel' ? '⛽' : (f.category_icon === 'coffee' ? '☕' : (f.category_icon === 'shopping-basket' ? '🧺' : '🛒'));
+
+    return `
+      <div class="p-3 bg-slate-950/90 rounded-2xl border border-slate-800 hover:border-emerald-500/50 transition shadow flex items-center justify-between gap-2.5">
+        <div class="flex items-center gap-2.5 min-w-0 flex-1">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-base font-black text-white shadow" style="background-color: ${f.theme_color}">
+            ${icon}
+          </div>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs font-black text-white truncate">${f.name}</span>
+              ${f.is_es_pro ? '<span class="text-[8px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.2 rounded font-black">EEYES PRO</span>' : ''}
+            </div>
+            <div class="text-[10px] text-slate-400 truncate">${f.category} • ${f.address || f.tagline}</div>
+          </div>
+        </div>
+        <button type="button" onclick="openStoreBatchRulesModal('${f.id}')" class="py-1.5 px-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white font-extrabold text-[11px] rounded-xl shadow transition cursor-pointer flex items-center gap-1 whitespace-nowrap">
+          <span>ബാച്ചുകൾ</span>
+          <span>➔</span>
+        </button>
+      </div>
+    `;
+  }).join('');
+}
+
+function filterHomeFirms(cat, btn) {
+  state.homeSelectedCategory = cat;
+  document.querySelectorAll('.home-firms-filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  searchHomeFirms();
+}
+
+
+// ==================== SETTINGS & SECURITY & SAFE LOGOUT ==================== //
+
+async function openSettingsModal() {
+  const phone = state.currentCustomerPhone || '9656360650';
+  try {
+    const res = await fetch(`/api/customer/${phone}/settings`);
+    const data = await res.json();
+    if (data.success && data.settings) {
+      const s = data.settings;
+      const uidEl = document.getElementById('settings-op-id');
+      if (uidEl) uidEl.textContent = s.omnipoints_id || `OP-${phone}`;
+
+      const eyEl = document.getElementById('settings-ey-id');
+      if (eyEl) eyEl.textContent = s.eeyes_account_no || `EY-${phone.slice(-4)}`;
+
+      const phoneEl = document.getElementById('settings-phone');
+      if (phoneEl) phoneEl.textContent = `+91 ${phone}`;
+
+      const nameInput = document.getElementById('settings-name-input');
+      if (nameInput) nameInput.value = s.name || '';
+
+      const uNameInput = document.getElementById('settings-user-id-input');
+      if (uNameInput) uNameInput.value = s.user_id || '';
+
+      const pinInput = document.getElementById('settings-pin-input');
+      if (pinInput) pinInput.value = s.quick_pin || '';
+
+      const addrInput = document.getElementById('settings-address-input');
+      if (addrInput) addrInput.value = s.address || '';
+
+      const cityInput = document.getElementById('settings-city-input');
+      if (cityInput) cityInput.value = s.city || '';
+
+      const pinCodeInput = document.getElementById('settings-pincode-input');
+      if (pinCodeInput) pinCodeInput.value = s.pincode || '';
+
+      const bioToggle = document.getElementById('settings-bio-toggle');
+      if (bioToggle) bioToggle.checked = Boolean(s.bio_unlock);
+
+      const notifToggle = document.getElementById('settings-notif-toggle');
+      if (notifToggle) notifToggle.checked = Boolean(s.notifications_enabled);
+
+      // Render linked store badges
+      const storesContainer = document.getElementById('settings-linked-stores');
+      if (storesContainer && s.linked_firms) {
+        storesContainer.innerHTML = s.linked_firms.map(f => `
+          <div class="flex items-center justify-between p-2 rounded-xl bg-slate-800/80 border border-slate-700/80 text-[11px]">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full" style="background-color: ${f.theme_color || '#10B981'}"></span>
+              <span class="font-bold text-white">${f.name}</span>
+            </div>
+            <span class="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20">${f.account_no || 'EY-SYNC'}</span>
+          </div>
+        `).join('');
+      }
+    }
+  } catch (e) {
+    console.warn('Error fetching settings:', e);
+  }
+  openModal('settings-modal');
+}
+
+async function saveCustomerSettings() {
+  const phone = state.currentCustomerPhone || '9656360650';
+  const name = document.getElementById('settings-name-input')?.value || '';
+  const userId = document.getElementById('settings-user-id-input')?.value || '';
+  const password = document.getElementById('settings-password-input')?.value || '';
+  const quickPin = document.getElementById('settings-pin-input')?.value || '';
+  const address = document.getElementById('settings-address-input')?.value || '';
+  const city = document.getElementById('settings-city-input')?.value || '';
+  const pincode = document.getElementById('settings-pincode-input')?.value || '';
+  const bioUnlock = document.getElementById('settings-bio-toggle')?.checked ?? true;
+  const notifications = document.getElementById('settings-notif-toggle')?.checked ?? true;
+
+  try {
+    const res = await fetch(`/api/customer/${phone}/settings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        user_id: userId,
+        password,
+        quick_pin: quickPin,
+        address,
+        city,
+        pincode,
+        bio_unlock: bioUnlock,
+        notifications_enabled: notifications
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast('✅ സെറ്റിംഗ്സുകളും പാസ്‌വേഡും സുരക്ഷിതമായി സേവ് ചെയ്തു!');
+      // Update header customer name if changed
+      const headerName = document.getElementById('header-user-name');
+      if (headerName && name) headerName.textContent = name;
+      closeModal('settings-modal');
+    } else {
+      showToast('⚠️ സേവ് ചെയ്യാൻ കഴിഞ്ഞില്ല: ' + (data.message || 'Error'), 'error');
+    }
+  } catch (e) {
+    showToast('⚠️ സെർവർ പിശക്: ' + e.message, 'error');
+  }
+}
+
+function togglePasswordVisibility(inputId, btnEl) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    if (btnEl) btnEl.innerHTML = '🙈';
+  } else {
+    input.type = 'password';
+    if (btnEl) btnEl.innerHTML = '👁️';
+  }
+}
+
+function copyToClipboard(text, feedbackId) {
+  navigator.clipboard.writeText(text).then(() => {
+    const feedback = document.getElementById(feedbackId);
+    if (feedback) {
+      const originalText = feedback.innerHTML;
+      feedback.innerHTML = '✅';
+      setTimeout(() => { feedback.innerHTML = originalText; }, 2000);
+    }
+    showToast(`📋 കോപ്പി ചെയ്തു: ${text}`);
+  }).catch(() => {
+    showToast(`📋 ${text}`);
+  });
+}
+
+function promptSafeLogout() {
+  closeModal('settings-modal');
+  openModal('logout-confirm-modal');
+}
+
+function cancelLogout() {
+  closeModal('logout-confirm-modal');
+  showToast('🛡️ ലോഗിൻ സെഷൻ സുരക്ഷിതമായി നിലനിർത്തി!');
+}
+
+function confirmSafeLogout() {
+  closeModal('logout-confirm-modal');
+  logoutCustomer();
+}

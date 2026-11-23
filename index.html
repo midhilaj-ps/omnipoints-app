@@ -65,8 +65,8 @@
       <button onclick="openModal('customer-registration-modal')" class="px-2.5 py-1 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-[11px] flex items-center gap-1 shadow transition">
         <span>➕</span> Register Customer
       </button>
-      <button onclick="logoutCustomer()" id="btn-desktop-logout" class="px-2 py-1 rounded-xl bg-slate-800 text-rose-400 font-bold text-[11px] hover:bg-slate-700 transition cursor-pointer">
-        🚪 Logout
+      <button onclick="openSettingsModal()" id="btn-desktop-settings" class="px-2.5 py-1 rounded-xl bg-slate-800/90 text-slate-200 font-bold text-[11px] hover:bg-slate-700 border border-slate-700 transition cursor-pointer flex items-center gap-1.5 shadow-xs">
+        <span class="text-xs">⚙️</span> Settings
       </button>
     </div>
 
@@ -143,8 +143,9 @@
         <button onclick="syncEeyesPro()" title="Sync EEYES PRO Desktop ERP (localhost:3000)" class="w-8 h-8 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 text-white flex items-center justify-center text-xs font-bold transition shadow cursor-pointer" id="mobile-eeyes-sync-btn">
           🔄
         </button>
-        <button onclick="logoutCustomer()" title="Logout / Switch Phone" class="px-2 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-400 flex items-center gap-1 text-[11px] font-bold transition border border-slate-700/60 cursor-pointer" id="btn-mobile-logout">
-          <span>🚪</span> Logout
+        <button onclick="openSettingsModal()" title="Settings & Security" class="px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white flex items-center gap-1.5 text-[11px] font-bold transition border border-slate-700 shadow-xs cursor-pointer" id="btn-mobile-settings">
+          <span class="text-xs">⚙️</span>
+          <span>Settings</span>
         </button>
       </div>
     </div>
@@ -153,7 +154,9 @@
     <div class="app-viewport px-4 pt-3">
 
       <!-- ==================== VIEW 0: LOGIN & ONBOARDING INTERFACE ==================== -->
-      <section id="view-login" class="tab-view active animate-fade-in py-2">
+      <section id="view-login" class="tab-view active animate-fade-in py-2 relative overflow-hidden rounded-3xl min-h-[460px] flex flex-col justify-center">
+        <canvas id="ai-neural-canvas" class="absolute inset-0 w-full h-full pointer-events-none z-0"></canvas>
+        <div class="relative z-10 w-full">
         <div class="text-center mb-5">
           <div class="w-16 h-16 rounded-3xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-amber-500 mx-auto flex items-center justify-center text-3xl shadow-xl border border-white/20 mb-3 animate-pulse">
             🎁
@@ -282,6 +285,7 @@
         <div class="mt-4 p-3 rounded-2xl bg-slate-900/40 border border-slate-800 text-center text-[10px] text-slate-400">
           🔒 100% Secure & Unified with EEYES PRO ERP Software • 1 Reward Point = ₹1.00
         </div>
+              </div>
       </section>
 
       <!-- ==================== VIEW 1: HOME ==================== -->
@@ -339,6 +343,42 @@
               <span class="text-base">📜</span>
               <span>Passbook</span>
             </button>
+          </div>
+        </div>
+
+        <!-- Quick Partner Stores & Supermarket Categories (Prompt Specification) -->
+        <div class="mb-5 p-4 rounded-3xl bg-slate-900/80 border border-slate-800 shadow-xl">
+          <div class="flex items-center justify-between mb-2.5">
+            <div class="flex items-center gap-1.5">
+              <span class="text-base">🏪</span>
+              <div>
+                <span class="text-xs font-black text-white">പാർട്നേഴ്സ് സ്റ്റോറുകൾ (Partner Stores)</span>
+                <span class="text-[9px] text-slate-400 block">സൂപ്പർമാർക്കറ്റുകളും മറ്റ് അംഗീകൃത സ്ഥാപനങ്ങളും</span>
+              </div>
+            </div>
+            <button onclick="switchTab('firms')" class="text-[10px] font-bold text-emerald-400 hover:text-emerald-300">എല്ലാം കാണുക &rarr;</button>
+          </div>
+
+          <!-- Category Filter Chips -->
+          <div class="chip-scroll mb-3">
+            <button type="button" onclick="filterHomeFirms('ALL', this)" data-cat="ALL" class="chip-btn home-firms-filter-btn active">🌟 എല്ലാ സ്റ്റോറുകളും</button>
+            <button type="button" onclick="filterHomeFirms('SUPERMARKET', this)" data-cat="SUPERMARKET" class="chip-btn home-firms-filter-btn">🛒 സൂപ്പർമാർക്കറ്റ്</button>
+            <button type="button" onclick="filterHomeFirms('FUEL', this)" data-cat="FUEL" class="chip-btn home-firms-filter-btn">⛽ പെട്രോളിയം</button>
+            <button type="button" onclick="filterHomeFirms('CAFÉ', this)" data-cat="CAFÉ" class="chip-btn home-firms-filter-btn">☕ കഫേ</button>
+            <button type="button" onclick="filterHomeFirms('FASHION', this)" data-cat="FASHION" class="chip-btn home-firms-filter-btn">👗 ടെക്സ്റ്റൈൽസ്</button>
+          </div>
+
+          <!-- Search Bar with Dedicated Button -->
+          <div class="flex gap-2 mb-3">
+            <input id="home-firm-search-input" type="text" placeholder="🔍 സൂപ്പർമാർക്കറ്റ് തിരയുക..." class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 font-semibold" onkeyup="if(event.key==='Enter') searchHomeFirms()">
+            <button type="button" onclick="searchHomeFirms()" class="px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs rounded-xl shadow transition cursor-pointer flex items-center gap-1">
+              <span>🔍</span><span>സെർച്ച്</span>
+            </button>
+          </div>
+
+          <!-- Stores Mini Cards Container -->
+          <div id="home-stores-preview-container" class="space-y-2">
+            <!-- Populated dynamically -->
           </div>
         </div>
 
@@ -468,19 +508,29 @@
       <!-- ==================== VIEW 2: FIRMS & CATEGORIES ==================== -->
       <section id="view-firms" class="tab-view hidden animate-slide-up">
         <div class="mb-3">
-          <div class="text-base font-extrabold text-white">Partner Stores & Categories</div>
-          <div class="text-xs text-slate-400">Centralized reward network across diverse businesses</div>
+          <div class="text-base font-black text-white flex items-center gap-2">
+            <span>🏪</span><span>പാർട്നേഴ്സ് സ്റ്റോറുകൾ (Partner Stores)</span>
+          </div>
+          <div class="text-xs text-slate-400">സെൻട്രലൈസ്ഡ് റിവാർഡ് നെറ്റ്വർക്കിലെ അംഗീകൃത പാർട്ണർ സ്ഥാപനങ്ങൾ</div>
+        </div>
+
+        <!-- Search Bar with Dedicated Search Button -->
+        <div class="flex gap-2 mb-3">
+          <input id="firm-search-input" type="text" placeholder="🔍 സൂപ്പർമാർക്കറ്റ് അല്ലെങ്കിൽ സ്റ്റോർ തിരയുക..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 font-semibold" onkeyup="if(event.key==='Enter') searchFirms()">
+          <button id="btn-firm-search" onclick="searchFirms()" class="px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs rounded-xl shadow transition cursor-pointer flex items-center gap-1">
+            <span>🔍</span><span>സെർച്ച്</span>
+          </button>
         </div>
 
         <!-- Category Filter Chips -->
         <div class="chip-scroll mb-3">
-          <button onclick="filterFirmsByCategory('ALL', this)" class="chip-btn firms-filter-btn active">All Stores</button>
-          <button onclick="filterFirmsByCategory('SUPERMARKET', this)" class="chip-btn firms-filter-btn">Supermarkets</button>
-          <button onclick="filterFirmsByCategory('FUEL', this)" class="chip-btn firms-filter-btn">Fuel & CNG</button>
-          <button onclick="filterFirmsByCategory('CAFÉ', this)" class="chip-btn firms-filter-btn">Café & Bakeries</button>
-          <button onclick="filterFirmsByCategory('ELECTRONICS', this)" class="chip-btn firms-filter-btn">Electronics</button>
-          <button onclick="filterFirmsByCategory('FASHION', this)" class="chip-btn firms-filter-btn">Fashion</button>
-          <button onclick="filterFirmsByCategory('HEALTHCARE', this)" class="chip-btn firms-filter-btn">Pharmacy & Wellness</button>
+          <button onclick="filterFirmsByCategory('ALL', this)" data-cat="ALL" class="chip-btn firms-filter-btn active">🌟 എല്ലാ സ്റ്റോറുകളും (All)</button>
+          <button onclick="filterFirmsByCategory('SUPERMARKET', this)" data-cat="SUPERMARKET" class="chip-btn firms-filter-btn">🛒 സൂപ്പർമാർക്കറ്റ് (Supermarket)</button>
+          <button onclick="filterFirmsByCategory('FUEL', this)" data-cat="FUEL" class="chip-btn firms-filter-btn">⛽ പെട്രോളിയം (Fuel)</button>
+          <button onclick="filterFirmsByCategory('CAFÉ', this)" data-cat="CAFÉ" class="chip-btn firms-filter-btn">☕ കഫേ (Café)</button>
+          <button onclick="filterFirmsByCategory('FASHION', this)" data-cat="FASHION" class="chip-btn firms-filter-btn">👗 ടെക്സ്റ്റൈൽസ് (Fashion)</button>
+          <button onclick="filterFirmsByCategory('ELECTRONICS', this)" data-cat="ELECTRONICS" class="chip-btn firms-filter-btn">📱 ഇലക്ട്രോണിക്സ്</button>
+          <button onclick="filterFirmsByCategory('HEALTHCARE', this)" data-cat="HEALTHCARE" class="chip-btn firms-filter-btn">💊 ഫാർമസി (Pharmacy)</button>
         </div>
 
         <!-- Firms List Container -->
@@ -1261,6 +1311,294 @@
       </button>
       <button type="button" id="btn-accept-merchant-req" onclick="acceptMerchantRedemptionRequest()" class="py-3 px-3 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white font-black text-xs shadow-lg transition cursor-pointer flex items-center justify-center gap-1.5 transform hover:scale-[1.02]">
         <span>✅ അക്സെപ്റ്റ് ചെയ്യുക (Accept)</span>
+      </button>
+    </div>
+  </div>
+
+
+  <!-- ==================== MODAL 11: PROFILE SETUP & COMPLETION ==================== -->
+  <div id="profile-setup-modal" class="bottom-sheet max-w-lg mx-auto p-5 text-center">
+    <div class="w-14 h-14 rounded-3xl bg-gradient-to-tr from-indigo-600 via-teal-600 to-emerald-500 mx-auto flex items-center justify-center text-2xl shadow-xl border border-white/20 mb-3 animate-pulse">
+      📝
+    </div>
+    <div class="text-base font-black text-white">പ്രൊഫൈൽ പൂർത്തിയാക്കുക (Complete Profile)</div>
+    <p class="text-xs text-slate-300 mt-1">
+      നിങ്ങളുടെ സെൻട്രലൈസ്ഡ് റിവാർഡ് വാലറ്റ് ആക്റ്റീവ് ആക്കാൻ മേൽവിലാസവും പിൻകോഡും നൽകുക.
+    </p>
+
+    <div class="mt-4 p-4 bg-slate-900 border border-slate-700 rounded-2xl text-left space-y-3">
+      <div>
+        <label class="block text-[11px] font-bold text-slate-300 mb-1">പൂർണ്ണ നാമം (Full Name)</label>
+        <input id="profile-name-input" type="text" placeholder="e.g. Midhilaj PS" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-bold focus:outline-none focus:border-emerald-500">
+      </div>
+      <div>
+        <label class="block text-[11px] font-bold text-slate-300 mb-1">മേൽവിലാസം / വീട്ടുപേര് (Address / House)</label>
+        <input id="profile-address-input" type="text" placeholder="e.g. Hill Palace Road, Beach Road" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-semibold focus:outline-none focus:border-emerald-500">
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-[11px] font-bold text-slate-300 mb-1">സ്ഥലം / നഗരം (City)</label>
+          <input id="profile-city-input" type="text" placeholder="e.g. Calicut" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-semibold focus:outline-none focus:border-emerald-500">
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-300 mb-1">പിൻകോഡ് (PIN Code - 6 അക്കം)</label>
+          <input id="profile-pincode-input" type="text" maxlength="6" placeholder="e.g. 673001" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-amber-400 font-mono font-bold focus:outline-none focus:border-amber-500">
+        </div>
+      </div>
+    </div>
+
+    <button type="button" id="btn-save-profile" onclick="saveCustomerProfile()" class="w-full mt-4 py-3 bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 text-white font-black text-xs rounded-xl shadow-lg transition transform hover:scale-[1.01] cursor-pointer">
+      ✅ സേവ് ചെയ്ത് വാലറ്റിലേക്ക് പ്രവേശിക്കുക (Save & Enter Wallet) &rarr;
+    </button>
+  </div>
+
+  <!-- ==================== MODAL 12: STORE BATCH-WISE REWARDS & RULES ==================== -->
+  <div id="store-batch-rules-modal" class="bottom-sheet max-w-lg mx-auto p-4 text-left max-h-[85vh] flex flex-col">
+    <!-- Header -->
+    <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+      <div class="flex items-center gap-3">
+        <div id="smodal-icon" class="w-12 h-12 rounded-2xl bg-emerald-600/20 text-emerald-400 flex items-center justify-center text-2xl border border-emerald-500/30">
+          🛒
+        </div>
+        <div>
+          <div class="font-black text-white text-sm" id="smodal-firm-name">EEYES Pro Retail & Supermarket</div>
+          <div class="text-[10px] text-emerald-400 font-extrabold uppercase" id="smodal-firm-badge">Official ERP Supermarket</div>
+        </div>
+      </div>
+      <button type="button" onclick="closeModal('store-batch-rules-modal')" class="text-slate-400 hover:text-white p-1 text-base font-bold cursor-pointer">✕</button>
+    </div>
+
+    <!-- Store Redemption Rules Card -->
+    <div class="p-3 rounded-2xl bg-slate-900 border border-slate-700 mb-3 space-y-1.5 text-xs">
+      <div class="text-xs font-black text-amber-400 flex items-center gap-1.5">
+        <span>📜</span><span>സ്റ്റോർ റിഡംപ്ഷൻ റൂളുകൾ (Store Rules)</span>
+      </div>
+      <div class="text-[11px] text-slate-300 leading-relaxed space-y-1">
+        <div class="flex items-start gap-1.5">
+          <span class="text-emerald-400 font-bold">•</span>
+          <span><strong>10x പർച്ചേസ് റൂൾ:</strong> പോയിന്റുകൾ റെഡീം ചെയ്യാൻ പോയിന്റിന്റെ 10 മടങ്ങ് തുകയ്ക്കുള്ള ബില്ല് ഉണ്ടായിരിക്കണം (1 Pt = ₹1.00).</span>
+        </div>
+        <div class="flex items-start gap-1.5">
+          <span class="text-emerald-400 font-bold">•</span>
+          <span><strong>മെച്ചൂരിറ്റി പോളിസി:</strong> സാധനം വാങ്ങിയ ദിവസം കഴിഞ്ഞ് അടുത്ത ദിവസം 12:00 AM-ന് പോയിന്റുകൾ മെച്വർ ആകും.</span>
+        </div>
+        <div class="flex items-start gap-1.5">
+          <span class="text-emerald-400 font-bold">•</span>
+          <span><strong>കാലാവധി:</strong> ഓരോ ബാച്ചിനും 7 ദിവസത്തെ വാലിഡിറ്റി ഉണ്ടായിരിക്കും.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Batch-wise List Header -->
+    <div class="flex items-center justify-between mb-2">
+      <div class="text-xs font-black text-white flex items-center gap-1.5">
+        <span>📦</span><span>ബാച്ച് തിരിച്ചുള്ള വിവരങ്ങൾ (Batches)</span>
+      </div>
+      <span class="text-[10px] text-emerald-400 font-bold" id="smodal-total-pts">₹0.00 Available</span>
+    </div>
+
+    <!-- Batches Scroll Container -->
+    <div id="smodal-batches-list" class="space-y-2 overflow-y-auto flex-1 pr-1 max-h-[40vh]">
+      <!-- Dynamically filled by JS -->
+    </div>
+
+    <button type="button" onclick="closeModal('store-batch-rules-modal')" class="w-full mt-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition cursor-pointer text-center">
+      ശരി (Close)
+    </button>
+  </div>
+
+  
+
+  <!-- ==================== MODAL: SETTINGS & SECURITY ==================== -->
+  <div id="settings-modal" class="bottom-sheet max-w-lg mx-auto p-4 text-left max-h-[90vh] flex flex-col z-50">
+    <!-- Header -->
+    <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+      <div class="flex items-center gap-2.5">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-xl text-white shadow-md border border-white/20">
+          ⚙️
+        </div>
+        <div>
+          <div class="font-black text-white text-sm">അക്കൗണ്ട് ക്രമീകരണങ്ങൾ & സുരക്ഷ</div>
+          <div class="text-[10px] text-indigo-400 font-extrabold uppercase">Settings & Credentials</div>
+        </div>
+      </div>
+      <button type="button" onclick="closeModal('settings-modal')" class="text-slate-400 hover:text-white p-1 text-base font-bold cursor-pointer">✕</button>
+    </div>
+
+    <div class="space-y-4 overflow-y-auto flex-1 pr-1 pb-4">
+      <!-- 1. Universal User ID & Credentials Card -->
+      <div class="p-3.5 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 border border-indigo-500/30 shadow-md space-y-3 relative overflow-hidden">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-black text-amber-400 flex items-center gap-1.5">
+            <span>🪪</span><span>യൂസർ ഐഡി & പ്രൊഫൈൽ വിവരങ്ങൾ</span>
+          </span>
+          <span class="text-[10px] font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-500/30">
+            🏆 Gold VIP Member
+          </span>
+        </div>
+
+        <!-- User ID Display with Copy -->
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div class="p-2.5 rounded-xl bg-slate-800/80 border border-slate-700/80">
+            <div class="text-[10px] text-slate-400 font-semibold mb-0.5">OmniPoints User ID</div>
+            <div class="flex items-center justify-between">
+              <span class="font-mono font-black text-white text-xs" id="settings-op-id">OP-9656360650</span>
+              <button type="button" id="copy-op-btn" onclick="copyToClipboard(document.getElementById('settings-op-id').textContent, 'copy-op-btn')" class="text-[10px] text-indigo-300 hover:text-indigo-200 bg-indigo-600/30 px-1.5 py-0.5 rounded-md border border-indigo-500/30 font-bold transition cursor-pointer">📋</button>
+            </div>
+          </div>
+
+          <div class="p-2.5 rounded-xl bg-slate-800/80 border border-slate-700/80">
+            <div class="text-[10px] text-slate-400 font-semibold mb-0.5">EEYES PRO Store ID</div>
+            <div class="flex items-center justify-between">
+              <span class="font-mono font-black text-emerald-400 text-xs" id="settings-ey-id">EY-0650</span>
+              <span class="text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded font-bold">ERP LINKED</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Phone -->
+        <div class="flex items-center justify-between text-xs bg-slate-800/50 p-2 rounded-xl border border-slate-700/50">
+          <span class="text-slate-400">രജിസ്റ്റർ ചെയ്ത ഫോൺ:</span>
+          <span class="font-mono font-bold text-slate-200 flex items-center gap-1">
+            <span id="settings-phone">+91 9656360650</span>
+            <span class="text-emerald-400 text-xs">✓</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- 2. Security: User ID, Password & Quick PIN Settings -->
+      <div class="p-3.5 rounded-2xl bg-slate-900 border border-slate-700/90 shadow-md space-y-3">
+        <div class="text-xs font-black text-white flex items-center gap-1.5">
+          <span>🔐</span><span>യൂസർ ഐഡിയും പാസ്‌വേഡും ക്രമീകരിക്കുക</span>
+        </div>
+
+        <div class="space-y-2.5 text-xs">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-300 mb-1">കസ്റ്റം യൂസർ ഐഡി (Custom User ID):</label>
+            <input type="text" id="settings-user-id-input" placeholder="e.g. midhilaj.ps" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono font-bold focus:outline-none focus:border-indigo-500">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold text-slate-300 mb-1">ലോഗിൻ പാസ്‌വേഡ് (Login Password):</label>
+            <div class="relative">
+              <input type="password" id="settings-password-input" placeholder="പുതിയ പാസ്‌വേഡ് നൽകുക..." class="w-full bg-slate-800 border border-slate-700 rounded-xl pl-3 pr-10 py-2 text-white font-mono focus:outline-none focus:border-indigo-500">
+              <button type="button" onclick="togglePasswordVisibility('settings-password-input', this)" class="absolute right-2.5 top-2 text-slate-400 hover:text-white text-sm cursor-pointer">👁️</button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold text-slate-300 mb-1">6-അക്ക സെക്യൂരിറ്റി ക്വിക്ക് പിൻ (6-Digit Quick PIN):</label>
+            <div class="relative">
+              <input type="password" id="settings-pin-input" maxlength="6" placeholder="e.g. 261015" class="w-full bg-slate-800 border border-slate-700 rounded-xl pl-3 pr-10 py-2 text-white font-mono tracking-widest font-bold focus:outline-none focus:border-indigo-500">
+              <button type="button" onclick="togglePasswordVisibility('settings-pin-input', this)" class="absolute right-2.5 top-2 text-slate-400 hover:text-white text-sm cursor-pointer">👁️</button>
+            </div>
+          </div>
+        </div>
+
+        <button type="button" onclick="saveCustomerSettings()" class="w-full mt-2 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer">
+          <span>💾</span><span>പാസ്‌വേഡും വിവരങ്ങളും സേവ് ചെയ്യുക (Save)</span>
+        </button>
+      </div>
+
+      <!-- 3. Profile & Address Details -->
+      <div class="p-3.5 rounded-2xl bg-slate-900 border border-slate-700/90 shadow-md space-y-2.5 text-xs">
+        <div class="text-xs font-black text-white flex items-center gap-1.5">
+          <span>📍</span><span>മേൽവിലാസം & ലൊക്കേഷൻ (Address Details)</span>
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-300 mb-1">പൂർണ്ണമായ പേര് (Full Name):</label>
+          <input type="text" id="settings-name-input" placeholder="MIDHILAJ PS" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold focus:outline-none focus:border-indigo-500">
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-300 mb-1">മേൽവിലാസം (Address):</label>
+          <input type="text" id="settings-address-input" placeholder="Kozhikode Beach Road, Flat 4B" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-300 mb-1">നഗരം / ജില്ല (City):</label>
+            <input type="text" id="settings-city-input" placeholder="Calicut" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-300 mb-1">പിൻകോഡ് (PIN Code):</label>
+            <input type="text" id="settings-pincode-input" placeholder="673001" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-indigo-500">
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Security Toggles -->
+      <div class="p-3.5 rounded-2xl bg-slate-900 border border-slate-700/90 shadow-md space-y-3 text-xs">
+        <div class="text-xs font-black text-white flex items-center gap-1.5">
+          <span>⚡</span><span>ആപ്പ് മുൻഗണനകൾ & സുരക്ഷ (Preferences)</span>
+        </div>
+
+        <div class="flex items-center justify-between py-1">
+          <div>
+            <div class="font-bold text-slate-200 text-xs">ഫിംഗർപ്രിന്റ് / ബയോമെട്രിക് അൺലോക്ക്</div>
+            <div class="text-[10px] text-slate-400">വേഗത്തിലുള്ള സുരക്ഷിത ലോഗിൻ</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="settings-bio-toggle" checked onchange="saveCustomerSettings()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="flex items-center justify-between py-1 border-t border-slate-800">
+          <div>
+            <div class="font-bold text-slate-200 text-xs">ക്യാഷ്ബാക്ക് & ബിൽ അപ്രൂവൽ അറിയിപ്പുകൾ</div>
+            <div class="text-[10px] text-slate-400">തത്സമയ ശബ്ദ അറിയിപ്പുകൾ ഓൺ ചെയ്യുക</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="settings-notif-toggle" checked onchange="saveCustomerSettings()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="flex items-center justify-between py-1 border-t border-slate-800">
+          <div>
+            <div class="font-bold text-slate-200 text-xs">EEYES PRO തത്സമയ സിങ്ക്</div>
+            <div class="text-[10px] text-emerald-400 font-bold">● Active Background Sync</div>
+          </div>
+          <span class="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20 font-bold">CONNECTED</span>
+        </div>
+      </div>
+
+      <!-- 5. Linked Network Stores -->
+      <div class="p-3.5 rounded-2xl bg-slate-900 border border-slate-700/90 shadow-md space-y-2 text-xs">
+        <div class="text-xs font-black text-white flex items-center gap-1.5">
+          <span>🏪</span><span>ബന്ധിപ്പിച്ച സ്റ്റോറുകൾ (Connected Partner Stores)</span>
+        </div>
+        <div id="settings-linked-stores" class="space-y-1.5">
+          <!-- Dynamically filled -->
+        </div>
+      </div>
+
+      <!-- 6. Discreet Logout Zone (Nest at very bottom, safe and unobtrusive) -->
+      <div class="pt-4 border-t border-slate-800/80 mt-5 text-center">
+        <button type="button" onclick="promptSafeLogout()" class="px-4 py-2 rounded-xl text-slate-400 hover:text-rose-400 text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 border border-slate-800 transition flex items-center justify-center gap-2 mx-auto cursor-pointer">
+          <span>🚪</span><span>ഈ ഉപകരണത്തിൽ നിന്ന് ലോഗൗട്ട് ചെയ്യുക (Log Out)</span>
+        </button>
+        <p class="text-[10px] text-slate-400 mt-1.5 max-w-xs mx-auto">
+          നിങ്ങൾ ലോഗിൻ ചെയ്തു തുടരുമ്പോൾ മാത്രമേ കടകളിൽ സാധനം വാങ്ങുമ്പോൾ ഇൻസ്റ്റന്റ് ക്യാഷ്ബാക്ക് അപ്രൂവലുകൾ ലഭിക്കൂ.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: SAFE LOGOUT CONFIRMATION ==================== -->
+  <div id="logout-confirm-modal" class="bottom-sheet max-w-sm mx-auto p-4 text-center z-50">
+    <div class="w-12 h-12 rounded-2xl bg-slate-800 text-2xl mx-auto flex items-center justify-center mb-3 border border-slate-700 shadow-inner">
+      🛡️
+    </div>
+    <h3 class="text-sm font-black text-white mb-1">ലോഗിൻ സെഷൻ നിലനിർത്തണോ?</h3>
+    <p class="text-xs text-slate-300 leading-relaxed mb-3">
+      നിങ്ങളുടെ <strong class="text-amber-400 font-mono">₹32,860.00</strong> റിവാർഡ് പോയിന്റുകൾ പൂർണ്ണ സുരക്ഷിതമാണ്. ലോഗൗട്ട് ചെയ്താൽ കാഷ്യർ അപ്രൂവൽ പോപ്പ്അപ്പുകൾ തത്സമയം ലഭിക്കില്ല.
+    </p>
+    <div class="space-y-2">
+      <button type="button" onclick="cancelLogout()" class="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-xl shadow-lg transition cursor-pointer">
+        തുടരുക (Keep Logged In)
+      </button>
+      <button type="button" onclick="confirmSafeLogout()" class="w-full py-2 bg-slate-800/80 hover:bg-slate-800 text-rose-400 hover:text-rose-300 font-semibold text-[11px] rounded-xl border border-slate-700 transition cursor-pointer">
+        ലോഗൗട്ട് ചെയ്യുക (Confirm Logout)
       </button>
     </div>
   </div>

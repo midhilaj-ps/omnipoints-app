@@ -359,3 +359,200 @@ body {
   font-size: 11px;
   letter-spacing: 0.05em;
 }
+
+/* ========================================================
+   BUSINESS-SPECIFIC UI ANIMATIONS & PREMIUM STYLING
+   Supermarket (Groceries), Petroleum (Fuel), Tech Lounge, Cafe, Gold Rewards
+   ======================================================== */
+
+/* 1. Floating Gold Coins */
+@keyframes floatCoin {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg) scale(1);
+    filter: drop-shadow(0 4px 6px rgba(245, 158, 11, 0.4));
+  }
+  50% {
+    transform: translateY(-8px) rotate(6deg) scale(1.05);
+    filter: drop-shadow(0 10px 14px rgba(245, 158, 11, 0.7));
+  }
+}
+
+.animate-float-coin {
+  animation: floatCoin 3s ease-in-out infinite;
+}
+
+.animate-float-coin-delayed {
+  animation: floatCoin 3.6s ease-in-out infinite 0.8s;
+}
+
+/* 2. Supermarket Barcode Laser Scan Beam */
+@keyframes laserScan {
+  0% {
+    top: 0%;
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    top: 96%;
+    opacity: 0.2;
+  }
+}
+
+.laser-scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #10B981, #34D399, transparent);
+  box-shadow: 0 0 10px #10B981, 0 0 4px #34D399;
+  animation: laserScan 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  pointer-events: none;
+}
+
+/* 3. Supermarket Shopping Cart Bounce & Roll */
+@keyframes cartBounce {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-3px) rotate(-3deg);
+  }
+  75% {
+    transform: translateY(-1px) rotate(2deg);
+  }
+}
+
+.animate-cart-bounce {
+  display: inline-block;
+  animation: cartBounce 1.8s ease-in-out infinite;
+}
+
+/* 4. Petroleum Fuel Dispenser Pulse & Glow */
+@keyframes fuelPulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 2px rgba(234, 88, 12, 0.4));
+  }
+  50% {
+    transform: scale(1.08);
+    filter: drop-shadow(0 0 10px rgba(234, 88, 12, 0.8));
+  }
+}
+
+.animate-fuel-pulse {
+  display: inline-block;
+  animation: fuelPulse 2.2s ease-in-out infinite;
+}
+
+/* 5. Steaming Artisan Coffee Cup Aroma Wisps */
+@keyframes steamRise {
+  0% {
+    transform: translateY(0) scaleX(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateY(-6px) scaleX(1.3);
+    opacity: 0.4;
+  }
+  100% {
+    transform: translateY(-12px) scaleX(1.6);
+    opacity: 0;
+  }
+}
+
+.animate-steam {
+  animation: steamRise 2s ease-out infinite;
+}
+
+/* 6. Tech Lounge Neon Pulse */
+@keyframes neonPulse {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.3), inset 0 0 8px rgba(59, 130, 246, 0.2);
+    border-color: rgba(99, 102, 241, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.7), inset 0 0 12px rgba(99, 102, 241, 0.4);
+    border-color: rgba(129, 140, 248, 0.9);
+  }
+}
+
+.animate-neon-pulse {
+  animation: neonPulse 2.8s ease-in-out infinite;
+}
+
+/* 7. Shimmer Card Flow */
+@keyframes shimmerGleam {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer-bg {
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 100%);
+  background-size: 200% 100%;
+  animation: shimmerGleam 4s infinite linear;
+}
+
+/* 8. Live Business Micro-Ticker */
+@keyframes tickerSlide {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.ticker-track {
+  display: flex;
+  width: max-content;
+  animation: tickerSlide 22s linear infinite;
+}
+
+.ticker-track:hover {
+  animation-play-state: paused;
+}
+
+/* 9. iOS Toggle Switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #334155;
+  transition: .3s;
+  border-radius: 24px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: '';
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .3s;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+input:checked + .toggle-slider {
+  background-color: #10B981;
+}
+
+input:checked + .toggle-slider:before {
+  transform: translateX(20px);
+}
