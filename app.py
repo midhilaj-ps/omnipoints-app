@@ -2951,6 +2951,9 @@ def erp_issue_reward():
         required_bill = round(points * multiplier, 2) if multiplier > 1.0 else firm['min_bill_amount']
 
         batch_id = data.get('batch_id') or f"BAT_{now.strftime('%Y%m%d')}_{invoice_no.replace('-', '_')}"
+        b_suffix = invoice_no.replace('INV-', '').replace('-', '')[-4:]
+        red_code = f"OP-{b_suffix}-{uuid.uuid4().hex[:4].upper()}"
+        mat_date = (now + timedelta(days=1)).strftime('%Y-%m-%d')
         cursor.execute('''
         SELECT id FROM reward_batches 
         WHERE id = ? OR (customer_phone = ? AND firm_id = ? AND invoice_no = ?)
@@ -2967,8 +2970,8 @@ def erp_issue_reward():
             cursor.execute('''
             INSERT INTO reward_batches (id, customer_phone, firm_id, invoice_no, bill_amount,
                                         points_earned, points_remaining, earned_date, expiry_date,
-                                        required_bill_to_redeem, status, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE', ?)
+                                        required_bill_to_redeem, status, created_at, redemption_code, maturity_date)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?, ?)
             ''', (
                 batch_id,
                 phone,
@@ -2980,7 +2983,9 @@ def erp_issue_reward():
                 now_str,
                 expiry_date,
                 required_bill,
-                now_str
+                now_str,
+                red_code,
+                mat_date
             ))
 
         # Transaction ledger entry
@@ -3233,6 +3238,8 @@ def sync_from_eeyes_pro(state_override=None):
         state['returns'] = state_override.get('returns', [])
     else:
         data_dir = r"C:\Users\LENOVO\.gemini\antigravity\scratch\vyapar-web\data"
+        if not os.path.exists(data_dir):
+            data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
         p_file = os.path.join(data_dir, "eeyes-parties.json")
         i_file = os.path.join(data_dir, "eeyes-invoices.json")
         r_file = os.path.join(data_dir, "eeyes-returns.json")
@@ -3257,6 +3264,10 @@ def sync_from_eeyes_pro(state_override=None):
     invoices = state.get('invoices', [])
     returns = state.get('returns', [])
 
+    if not parties and not invoices:
+        print("[EeyesSync] No Eeyes Pro data files found to sync. Keeping existing database state intact.")
+        return {'success': True, 'message': 'No Eeyes data to sync, database preserved.', 'synced_customers': 0, 'synced_sales': 0, 'synced_returns': 0}
+
     conn = get_db()
     conn.isolation_level = None
     cursor = conn.cursor()
@@ -3267,10 +3278,10 @@ def sync_from_eeyes_pro(state_override=None):
     synced_sales = 0
     synced_returns = 0
 
-    # 1. Clean up duplicate / obsolete batches and invoices for firm-es-pro
-    cursor.execute("DELETE FROM reward_batches WHERE firm_id = 'firm-es-pro'")
-    cursor.execute("DELETE FROM firm_invoices WHERE firm_id = 'firm-es-pro'")
-    cursor.execute("DELETE FROM transactions WHERE firm_id = 'firm-es-pro'")
+    # 1. Clean up duplicate / obsolete batches and invoices for firm-es-pro (preserve canonical batches)
+    cursor.execute("DELETE FROM reward_batches WHERE firm_id = 'firm-es-pro' AND id NOT LIKE 'BAT_%'")
+    cursor.execute("DELETE FROM firm_invoices WHERE firm_id = 'firm-es-pro' AND id NOT LIKE 'INV-%' AND id NOT LIKE 'RET-%'")
+    cursor.execute("DELETE FROM transactions WHERE firm_id = 'firm-es-pro' AND id NOT LIKE 'TX-%'")
 
     # 2. Sync Customers and Exact Batches
     for p in parties:
@@ -3321,13 +3332,13 @@ def sync_from_eeyes_pro(state_override=None):
                 if not b_id:
                     continue
                 inv_no = b.get('invoice_no', '')
-                earned_amt = float(b.get('earned_amount', 0))
-                bal_amt = float(b.get('balance_amount', earned_amt))
+                earned_amt = float(b.get('points_earned') or b.get('earned_amount') or b.get('points') or 0)
+                bal_amt = float(b.get('points_remaining') if b.get('points_remaining') is not None else (b.get('balance_amount') if b.get('balance_amount') is not None else earned_amt))
                 earned_date = b.get('earned_date', now.strftime('%Y-%m-%d'))
                 # Active batches from this billing cycle valid until 2026-11-29 23:59:59
-                exp_str = '2026-11-29 23:59:59'
-                req_bill = float(b.get('required_bill_amount', round(earned_amt * 10.0, 2)))
-                status = 'REDEEMED' if (b.get('is_redeemed') or bal_amt <= 0) else 'ACTIVE'
+                exp_str = b.get('expiry_date') or '2026-11-29 23:59:59'
+                req_bill = float(b.get('required_bill_to_redeem') or b.get('required_bill_amount') or b.get('bill_amount') or round(earned_amt * 10.0, 2))
+                status = 'REDEEMED' if (b.get('status') == 'REDEEMED' or b.get('is_redeemed') or bal_amt <= 0) else 'ACTIVE'
 
                 red_code = b.get('redemption_code') or f"OP-{b_id[-4:]}-K82F"
                 mat_date = b.get('maturity_date') or '2026-11-23'
@@ -3344,8 +3355,8 @@ def sync_from_eeyes_pro(state_override=None):
                 INSERT OR REPLACE INTO transactions (id, customer_phone, firm_id, type, points, amount_equivalent, bill_no, bill_amount, description, batch_ids, created_at)
                 VALUES (?, ?, 'firm-es-pro', 'EARN', ?, ?, ?, ?, ?, ?, ?)
                 ''', (tx_id, phone, earned_amt, earned_amt, inv_no, req_bill, f"50% Profit Share Cashback from Invoice #{inv_no} (Batch {b_id})", b_id, now_str))
-        elif float(p.get('rewardPoints', 0)) > 0:
-            pts = float(p.get('rewardPoints', 0))
+        elif float(p.get('rewardPoints', 0) or p.get('points', 0) or p.get('reward_balance', 0)) > 0:
+            pts = float(p.get('rewardPoints', 0) or p.get('points', 0) or p.get('reward_balance', 0))
             b_id = f"BAT_EEYES_{phone}"
             exp_str = '2026-11-29 23:59:59'
             req_bill = round(pts * 10.0, 2)
@@ -3546,6 +3557,14 @@ def http_sync_poll():
     since = float(request.args.get('since', 0))
     events = [e for e in recent_sync_events if e.get('serverTime', 0) > since]
     return jsonify({'success': True, 'events': events, 'deviceCount': len(connected_sync_clients)})
+
+# Register Unified 2-Way Sync Routes
+try:
+    from sync_api import register_sync_routes
+    register_sync_routes(app, get_db, normalize_phone, calculate_customer_summary, publish_sync_event)
+    print("[OmniSync] Unified 2-way sync routes successfully registered.")
+except Exception as sync_reg_err:
+    print(f"[OmniSync] Error registering sync routes: {sync_reg_err}")
 
 # Auto-initialize database tables on import or direct run
 init_db()

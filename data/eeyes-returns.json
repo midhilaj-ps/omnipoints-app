@@ -1,0 +1,81 @@
+[
+  {
+    "id": "ret-9901",
+    "returnSlipNo": "RET-2026-9901",
+    "originalInvoiceNo": "INV-2026-9901",
+    "partyId": "party-malabar",
+    "partyName": "Malabar Spices & Provisions",
+    "partyPhone": "9946889900",
+    "returnAmount": 600,
+    "date": "2026-11-22",
+    "reason": "Damaged spice container surrender / credit note"
+  },
+  {
+    "id": "cn-501",
+    "invoiceNo": "CN-2026-501",
+    "type": "credit_note",
+    "date": "2026-11-11",
+    "dueDate": "2026-11-11",
+    "partyId": "party-1",
+    "partyName": "Ramesh Supermarket & Sons",
+    "partyPhone": "9822012345",
+    "partyGstin": "27AALCR4521Q1ZN",
+    "placeOfSupply": "27-Maharashtra",
+    "originalInvoiceNo": "INV-2026-1001",
+    "returnReason": "Damaged Goods in Transit",
+    "items": [
+      {
+        "itemId": "item-1",
+        "name": "Basmati Rice Premium 5kg",
+        "hsn": "1006",
+        "qty": 2,
+        "unit": "BAG",
+        "rate": 450,
+        "discount": 0,
+        "taxRate": 5,
+        "taxableAmount": 900,
+        "cgst": 22.5,
+        "sgst": 22.5,
+        "igst": 0,
+        "total": 945
+      }
+    ],
+    "subtotal": 900,
+    "discountTotal": 0,
+    "taxTotal": 45,
+    "cgstTotal": 22.5,
+    "sgstTotal": 22.5,
+    "igstTotal": 0,
+    "roundOff": 0,
+    "grandTotal": 945,
+    "receivedAmount": 945,
+    "balanceDue": 0,
+    "paymentMode": "Khata Credit Adjusted",
+    "status": "credited",
+    "notes": "2 bags returned with torn packing. Restocked and customer khata credited.",
+    "terms": "1. Goods once sold will not be taken back or exchanged.\n2. Payment due within 15 days of invoice date.\n3. Subject to Pune jurisdiction only.",
+    "createdAt": "2026-11-11T11:00:00Z"
+  },
+  {
+    "id": "ret-501",
+    "returnSlipNo": "RET-2026-0501",
+    "originalInvoiceNo": "INV-2026-1001",
+    "partyId": "party-1",
+    "partyName": "Ramesh Supermarket & Sons",
+    "partyPhone": "9822012345",
+    "returnAmount": 450,
+    "date": "2026-11-10",
+    "reason": "Damaged goods return / surrender voucher"
+  },
+  {
+    "id": "ret-502",
+    "returnSlipNo": "RET-2026-0502",
+    "originalInvoiceNo": "INV-2026-1004",
+    "partyId": "party-midhilaj",
+    "partyName": "Midhilaj",
+    "partyPhone": "9656360650",
+    "returnAmount": 200,
+    "date": "2026-11-14",
+    "reason": "Excess packaging surrender refund"
+  }
+]
