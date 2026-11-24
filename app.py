@@ -44,6 +44,71 @@ def normalize_phone(raw):
         p = p[-10:]
     return p
 
+def sync_customer_to_eeyes_pro(phone, name, address='', city='', pincode='', email=''):
+    """Synchronizes registered customer to EEYES PRO Desktop ERP in real time"""
+    phone = normalize_phone(phone)
+    if len(phone) < 10 or not name:
+        return
+    eeyes_file = r"C:\Users\LENOVO\.gemini\antigravity\scratch\vyapar-web\data\eeyes-parties.json"
+    try:
+        if os.path.exists(eeyes_file):
+            with open(eeyes_file, 'r', encoding='utf-8') as f:
+                parties = json.load(f)
+            idx = next((i for i, p in enumerate(parties) if re.sub(r'[^0-9]', '', p.get('phone', '')) == phone), -1)
+            now_iso = datetime.now().isoformat()
+            if idx >= 0:
+                parties[idx]['name'] = name
+                if address: parties[idx]['address'] = address
+                if city: parties[idx]['city'] = city
+                if pincode: parties[idx]['pincode'] = pincode
+                parties[idx]['updatedAt'] = now_iso
+            else:
+                parties.append({
+                    "id": f"party-{phone}",
+                    "name": name,
+                    "phone": phone,
+                    "type": "customer",
+                    "partyType": "customer",
+                    "customerCategory": "retail",
+                    "email": email or f"{phone}@rewards.espro",
+                    "address": address,
+                    "city": city,
+                    "pincode": pincode,
+                    "balance": 0,
+                    "openingBalance": 0,
+                    "currentBalance": 0,
+                    "points": 50.0,
+                    "rewardPoints": 50.0,
+                    "omnipointsId": f"EEYES-OP-{phone}",
+                    "rewardEligibility": ["High", "Mid", "Low"],
+                    "reward_batches": [],
+                    "source": "EEYES RIPPO Real-time Sync",
+                    "createdAt": now_iso,
+                    "updatedAt": now_iso
+                })
+            with open(eeyes_file, 'w', encoding='utf-8') as f:
+                json.dump(parties, f, indent=2)
+    except Exception as e:
+        print(f"[RIPPO->EEYES] Direct file sync note: {e}")
+
+    def _send_http():
+        try:
+            import urllib.request
+            req_data = json.dumps({
+                "phone": phone,
+                "name": name,
+                "address": address,
+                "city": city,
+                "pincode": pincode,
+                "email": email,
+                "source": "EEYES RIPPO Mobile Feed"
+            }).encode('utf-8')
+            req = urllib.request.Request("http://127.0.0.1:3000/api/parties", data=req_data, headers={"Content-Type": "application/json"})
+            urllib.request.urlopen(req, timeout=3)
+        except Exception:
+            pass
+    threading.Thread(target=_send_http, daemon=True).start()
+
 def get_db():
     conn = sqlite3.connect(DB_PATH, timeout=30.0, check_same_thread=False)
     conn.row_factory = sqlite3.Row
@@ -1093,7 +1158,7 @@ def list_customers():
     cursor = conn.cursor()
     now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     cursor.execute('''
-    SELECT c.phone, c.name, c.email, c.avatar_color, c.vip_tier,
+    SELECT c.phone, c.name, c.email, c.avatar_color, c.vip_tier, c.address, c.city, c.pincode, c.created_at,
            COUNT(DISTINCT i.id) as es_invoices_count,
            COALESCE(SUM(b.points_remaining), 0) as es_points
     FROM customers c
@@ -1160,6 +1225,9 @@ def auth_lookup_phone():
     summary = calculate_customer_summary(phone)
     ledger = get_customer_business_ledger(phone)
 
+    # Real-time sync to EEYES PRO
+    sync_customer_to_eeyes_pro(phone, name, address, city, pincode, f"{phone}@rewards.espro")
+
     return jsonify({
         'success': True,
         'exists': True,
@@ -1167,6 +1235,100 @@ def auth_lookup_phone():
         'summary': summary,
         'business_ledger': ledger
     })
+
+def sync_customer_to_software(phone, name, address='', city='', pincode='', email=None):
+    """
+    Syncs newly registered customer to EEYES PRO (eeyes-parties.json)
+    and Desktop Vyapar database (kb_names and kb_address) in real-time.
+    """
+    import os, json, sqlite3, datetime
+    phone = str(phone).strip()
+    name = str(name).strip()
+    if not phone or not name:
+        return
+    
+    # 1. Update eeyes-parties.json
+    try:
+        eeyes_file = r"C:\Users\LENOVO\.gemini\antigravity\scratch\vyapar-web\data\eeyes-parties.json"
+        if os.path.exists(eeyes_file):
+            with open(eeyes_file, 'r', encoding='utf-8') as f:
+                parties = json.load(f)
+            found = False
+            for p in parties:
+                if str(p.get('phone', '')).strip() == phone:
+                    p['name'] = name
+                    p['address'] = address
+                    p['city'] = city
+                    p['pincode'] = pincode
+                    found = True
+                    break
+            if not found:
+                parties.append({
+                    'id': f'party-{phone}',
+                    'name': name,
+                    'phone': phone,
+                    'type': 'customer',
+                    'partyType': 'customer',
+                    'email': email or f'{phone}@rewards.espro',
+                    'address': address,
+                    'city': city,
+                    'pincode': pincode,
+                    'balance': 0.0,
+                    'openingBalance': 0.0,
+                    'points': 0.0,
+                    'reward_balance': 0.0,
+                    'reward_batches': []
+                })
+            with open(eeyes_file, 'w', encoding='utf-8') as f:
+                json.dump(parties, f, indent=2, ensure_ascii=False)
+    except Exception:
+        pass
+
+    # 2. Update Desktop Vyapar (ESTRADINGCOMPANY.vyp)
+    try:
+        vyp_db = os.path.expandvars(r'%APPDATA%\Vyaparapp\BusinessNames\ESTRADINGCOMPANY.vyp')
+        if os.path.exists(vyp_db):
+            v_conn = sqlite3.connect(vyp_db, timeout=5)
+            v_cur = v_conn.cursor()
+            now_str = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            v_cur.execute('SELECT name_id FROM kb_names WHERE phone_number = ? OR lower(full_name) = lower(?)', (phone, name))
+            v_row = v_cur.fetchone()
+            if v_row:
+                n_id = v_row[0]
+                v_cur.execute('''
+                    UPDATE kb_names 
+                    SET full_name = ?, phone_number = ?, address = ?, pincode = ?, date_modified = ?
+                    WHERE name_id = ?
+                ''', (name, phone, address, pincode, now_str, n_id))
+            else:
+                v_cur.execute('''
+                    INSERT INTO kb_names (
+                        date_created, date_modified, full_name, phone_number, email, amount,
+                        address, name_type, name_group_id, name_customer_type, created_by, updated_by,
+                        pincode, credit_limit_enabled, frequency_of_payment_reminder, name_is_active,
+                        name_sub_type, name_business_identifier_json
+                    ) VALUES (?, ?, ?, ?, ?, 0.0, ?, 1, 1, 0, 1, 1, ?, 0, 1, 1, 0, '{}')
+                ''', (now_str, now_str, name, phone, email or f'{phone}@rewards.espro', address, pincode))
+                n_id = v_cur.lastrowid
+            
+            # kb_address
+            v_cur.execute('SELECT address_id FROM kb_address WHERE name_id = ?', (n_id,))
+            if v_cur.fetchone():
+                v_cur.execute('''
+                    UPDATE kb_address 
+                    SET address = ?, city = ?, pincode = ?, state_name = 'Kerala', country = 'India', date_modified = ?
+                    WHERE name_id = ?
+                ''', (address, city, pincode, now_str, n_id))
+            else:
+                v_cur.execute('''
+                    INSERT INTO kb_address (name_id, address_type, address, city, pincode, state_name, country, date_created, date_modified)
+                    VALUES (?, 1, ?, ?, ?, 'Kerala', 'India', ?, ?)
+                ''', (n_id, address, city, pincode, now_str, now_str))
+            
+            v_conn.commit()
+            v_conn.close()
+    except Exception:
+        pass
 
 @app.route('/api/auth/register-simple', methods=['POST'])
 def auth_register_simple():
@@ -1188,7 +1350,6 @@ def auth_register_simple():
 
     conn = get_db()
     cursor = conn.cursor()
-    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     cursor.execute('SELECT * FROM customers WHERE phone = ?', (phone,))
@@ -1219,6 +1380,12 @@ def auth_register_simple():
     cursor.execute('SELECT * FROM customers WHERE phone = ?', (phone,))
     user = dict(cursor.fetchone())
     conn.close()
+
+    # Instant real-time sync to EEYES PRO (eeyes-parties.json) and Desktop Vyapar
+    try:
+        sync_customer_to_software(phone, name, address, city, pincode, user.get('email'))
+    except Exception as sync_e:
+        print(f"Software sync note: {sync_e}")
 
     summary = calculate_customer_summary(phone)
     ledger = get_customer_business_ledger(phone)
@@ -2955,6 +3122,9 @@ def erp_register_customer():
 
     summary = calculate_customer_summary(phone)
     registered_id = f"EEYES-OP-{phone}"
+
+    # Real-time sync to EEYES PRO
+    sync_customer_to_eeyes_pro(phone, name, address, '', '', email)
 
     return jsonify({
         'success': True,
