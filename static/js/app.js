@@ -3015,3 +3015,486 @@ function confirmSafeLogout() {
   closeModal('logout-confirm-modal');
   logoutCustomer();
 }
+
+
+// ==========================================================================
+// APPLE 'HELLO' CALLIGRAPHY AI ANIMATION & OMNIPOINTS JOURNEY ENGINE
+// ==========================================================================
+
+// Global state tracking for batches and selection
+state.selectedBatches = new Set();
+state.currentStoreBatches = [];
+
+// 1. Apple Chime Synthesizer via Web Audio API (Guaranteed playback)
+function playAppleChime() {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    const now = ctx.currentTime;
+    const freqs = [523.25, 659.25, 783.99, 1046.50]; // Pure C-Major Harmonic Chime
+    freqs.forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now + idx * 0.05);
+      gain.gain.setValueAtTime(0.001, now + idx * 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.12, now + idx * 0.05 + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.8);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + idx * 0.05);
+      osc.stop(now + 2.0);
+    });
+  } catch (e) {
+    console.log('Chime sound note:', e);
+  }
+}
+
+// 2. Apple 'hello' Calligraphy AI Animation
+function triggerAppleHelloAnimation(customerName, onComplete) {
+  const overlay = document.getElementById('apple-hello-overlay');
+  const nameEl = document.getElementById('apple-hello-cust-name');
+  if (!overlay) {
+    if (onComplete) onComplete();
+    return;
+  }
+
+  if (nameEl) {
+    nameEl.textContent = `ഹലോ, ${customerName || 'പ്രിയ ഉപഭോക്താവേ'}`;
+  }
+
+  // Play chime sound
+  playAppleChime();
+
+  // Reset and reveal overlay
+  overlay.classList.remove('hidden', 'apple-hello-dissolve');
+  
+  // Re-trigger stroke animation by replacing path element or re-animating
+  const path = overlay.querySelector('.apple-hello-path');
+  if (path) {
+    path.style.animation = 'none';
+    void path.offsetWidth; // trigger reflow
+    path.style.animation = 'appleDrawStroke 1.7s cubic-bezier(0.42, 0, 0.28, 1) forwards';
+  }
+
+  // Dissolve after 2.2 seconds into the Home Page
+  setTimeout(() => {
+    overlay.classList.add('apple-hello-dissolve');
+    setTimeout(() => {
+      overlay.classList.add('hidden');
+      overlay.classList.remove('apple-hello-dissolve');
+      if (onComplete) onComplete();
+    }, 550);
+  }, 2200);
+}
+
+// 3. Quick Customer Chips (1-Click Fill)
+function quickFillPhone(phone) {
+  const input = document.getElementById('landing-phone-input');
+  if (input) input.value = phone;
+  executePhoneLoginFlow();
+}
+
+// 4. Primary Phone Login Flow
+async function executePhoneLoginFlow() {
+  const input = document.getElementById('landing-phone-input');
+  let phone = input ? input.value.trim().replace(/[^0-9]/g, '') : '';
+  if (phone.length === 12 && phone.startsWith('91')) phone = phone.slice(2);
+  else if (phone.length === 11 && phone.startsWith('0')) phone = phone.slice(1);
+  else if (phone.length > 10) phone = phone.slice(-10);
+
+  if (!phone || phone.length < 10) {
+    alert('ദയവായി 10 അക്ക മൊബൈൽ നമ്പർ നൽകുക (Please enter valid 10-digit mobile number)');
+    return;
+  }
+
+  showLoadingSpinner(true);
+
+  try {
+    const res = await fetch('/api/auth/lookup-phone', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone })
+    });
+    const data = await res.json();
+
+    if (data.exists && data.customer) {
+      // Existing customer linked with shop / partner firm
+      establishCustomerSession(data.customer, data.summary, data.business_ledger);
+      showLoadingSpinner(false);
+
+      // Play Apple "hello" Animation with Customer Name, then transition to Home Page
+      triggerAppleHelloAnimation(data.customer.name, () => {
+        switchTab('home');
+      });
+    } else {
+      // New customer not associated with any shop yet -> Prompt Customer Registration Window
+      showLoadingSpinner(false);
+      document.getElementById('reg-display-phone').textContent = `+91 ${phone}`;
+      state.pendingRegistrationPhone = phone;
+      openModal('new-customer-modal');
+      setTimeout(() => {
+        const nameInp = document.getElementById('reg-input-name');
+        if (nameInp) nameInp.focus();
+      }, 300);
+    }
+  } catch (err) {
+    console.error('Phone lookup error:', err);
+    showLoadingSpinner(false);
+    alert('കണക്ഷൻ തകരാർ. ദയവായി വീണ്ടും ശ്രമിക്കുക.');
+  }
+}
+
+// 5. Customer Registration Handler
+async function handleSimpleRegistration(event) {
+  event.preventDefault();
+  const phone = state.pendingRegistrationPhone || (document.getElementById('landing-phone-input')?.value || '').trim();
+  const name = document.getElementById('reg-input-name')?.value.trim();
+  const address = document.getElementById('reg-input-address')?.value.trim();
+  const city = document.getElementById('reg-input-city')?.value.trim();
+  const pincode = document.getElementById('reg-input-pincode')?.value.trim();
+
+  if (!name) {
+    alert('ദയവായി നിങ്ങളുടെ പേര് നൽകുക.');
+    return;
+  }
+
+  showLoadingSpinner(true);
+  try {
+    const res = await fetch('/api/auth/register-simple', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, name, address, city, pincode })
+    });
+    const data = await res.json();
+    showLoadingSpinner(false);
+
+    if (data.success && data.customer) {
+      closeModal('new-customer-modal');
+      establishCustomerSession(data.customer, data.summary, data.business_ledger);
+
+      // Play Apple "hello" Animation with New Name, then transition to Home Page
+      triggerAppleHelloAnimation(data.customer.name, () => {
+        switchTab('home');
+      });
+    } else {
+      alert(data.message || 'രജിസ്ട്രേഷൻ പരാജയപ്പെട്ടു.');
+    }
+  } catch (err) {
+    console.error('Registration error:', err);
+    showLoadingSpinner(false);
+    alert('രജിസ്ട്രേഷൻ പ്രക്രിയയിൽ തകരാർ സംഭവിച്ചു.');
+  }
+}
+
+// Helper: Establish Customer Session in Frontend
+function establishCustomerSession(customer, summary, ledger) {
+  state.activePhone = customer.phone;
+  state.customer = customer;
+  state.summary = summary;
+  state.businessLedger = ledger;
+
+  // Update Header UI
+  const headerName = document.getElementById('header-user-name');
+  const headerPhone = document.getElementById('header-user-phone');
+  const headerAvatar = document.getElementById('header-user-avatar');
+  const headerUser = document.getElementById('mobile-header-user');
+  const headerGuest = document.getElementById('mobile-header-guest');
+
+  if (headerName) headerName.textContent = customer.name;
+  if (headerPhone) headerPhone.textContent = `+91 ${customer.phone}`;
+  if (headerAvatar) {
+    headerAvatar.textContent = customer.name.charAt(0).toUpperCase();
+    headerAvatar.style.backgroundColor = customer.avatar_color || '#DB2777';
+  }
+  if (headerUser) headerUser.classList.remove('hidden');
+  if (headerGuest) headerGuest.classList.add('hidden');
+
+  // Update Desktop Switcher Dropdown
+  const desktopSelect = document.getElementById('desktop-customer-select');
+  if (desktopSelect) {
+    let opt = desktopSelect.querySelector(`option[value="${customer.phone}"]`);
+    if (!opt) {
+      opt = document.createElement('option');
+      opt.value = customer.phone;
+      opt.textContent = `👤 ${customer.name} (${customer.phone})`;
+      desktopSelect.appendChild(opt);
+    }
+    desktopSelect.value = customer.phone;
+  }
+
+  // Update Hero Balance Displays
+  const activePoints = summary ? summary.total_active_points : 32860;
+  document.querySelectorAll('.wallet-inr-display').forEach(el => {
+    el.textContent = `₹${activePoints.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+  });
+  document.querySelectorAll('.wallet-points-display').forEach(el => {
+    el.textContent = activePoints.toLocaleString();
+  });
+
+  // Re-fetch ledger & customer details
+  if (typeof fetchCustomerDetails === 'function') {
+    fetchCustomerDetails(customer.phone);
+  }
+}
+
+// 6. Business Category Navigation
+function openSupermarketsList() {
+  openModal('supermarkets-modal');
+}
+
+function openCategoryFirms(categoryKey) {
+  switchTab('firms');
+  setTimeout(() => {
+    if (typeof filterHomeFirms === 'function') {
+      const btn = document.querySelector(`.home-firms-filter-btn[data-cat="${categoryKey}"]`);
+      if (btn) filterHomeFirms(categoryKey, btn);
+    }
+  }, 200);
+}
+
+function backToSupermarkets() {
+  closeModal('store-batches-modal');
+  openModal('supermarkets-modal');
+}
+
+// 7. Supermarket Selection -> Batch-wise Purchases List
+async function selectSupermarket(firmId) {
+  closeModal('supermarkets-modal');
+  openModal('store-batches-modal');
+
+  const container = document.getElementById('store-batches-list-container');
+  if (container) {
+    container.innerHTML = '<div class="p-6 text-center text-slate-400 text-xs">ബാച്ചുകൾ ലോഡ് ചെയ്യുന്നു...</div>';
+  }
+
+  try {
+    const phone = state.activePhone || '9656360650';
+    const res = await fetch(`/api/firms/${firmId}?phone=${phone}`);
+    const data = await res.json();
+
+    if (data.success && data.firm) {
+      const batches = data.firm.customer_batches || [];
+      state.currentStoreBatches = batches;
+      state.selectedBatches.clear();
+      renderStoreBatchesList(batches);
+      updateCombineBar();
+    } else {
+      if (container) container.innerHTML = '<div class="p-6 text-center text-rose-400 text-xs">ബാച്ചുകൾ ലഭ്യമാക്കാൻ സാധിച്ചില്ല.</div>';
+    }
+  } catch (err) {
+    console.error('Fetch batches error:', err);
+    if (container) container.innerHTML = '<div class="p-6 text-center text-rose-400 text-xs">കണക്ഷൻ തകരാർ.</div>';
+  }
+}
+
+// 8. Render Batch-wise Purchases List
+function renderStoreBatchesList(batches) {
+  const container = document.getElementById('store-batches-list-container');
+  if (!container) return;
+
+  if (!batches || batches.length === 0) {
+    container.innerHTML = `
+      <div class="p-8 text-center text-slate-400 space-y-2">
+        <span class="text-3xl">🛒</span>
+        <div class="text-sm font-bold text-white">ഈ സ്റ്റോറിൽ സജീവ ബാച്ചുകൾ ലഭ്യമല്ല</div>
+        <p class="text-xs">സ്റ്റോറിൽ പർച്ചേസ് ചെയ്യുമ്പോൾ ലഭിക്കുന്ന 50% ക്യാഷ്ബാക്ക് പോയിന്റുകൾ ഇവിടെ ദൃശ്യമാകും.</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = batches.map((b, idx) => {
+    const isSelected = state.selectedBatches.has(b.id);
+    const pts = parseFloat(b.points_remaining || b.points_earned || 0);
+    const reqBill = parseFloat(b.required_bill_to_redeem || (pts * 10));
+    const redCode = b.redemption_code || `OP-${b.id.slice(-4)}-K82F`;
+
+    return `
+      <div class="batch-card p-3.5 rounded-2xl bg-slate-900 border ${isSelected ? 'border-amber-500 bg-amber-500/10' : 'border-slate-800'} shadow-md" id="batch-item-${b.id}">
+        <div class="flex items-start justify-between gap-2 mb-2">
+          
+          <!-- Selection Checkbox & Batch Title -->
+          <div class="flex items-start gap-2.5">
+            <input type="checkbox" id="chk-batch-${b.id}" ${isSelected ? 'checked' : ''} onchange="toggleBatchSelection('${b.id}', this.checked)" class="mt-1 w-4 h-4 rounded text-amber-500 focus:ring-amber-500 bg-slate-800 border-slate-700 cursor-pointer">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-mono font-black text-amber-400">${b.id}</span>
+                <span class="text-[9px] font-black px-2 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">സജീവം</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5">
+                <span>ഇൻവോയ്സ്: <strong>${b.invoice_no || 'PURCHASE'}</strong></span> • <span>${b.earned_date || '22 Nov 2026'}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reward Points Pill -->
+          <div class="text-right">
+            <div class="text-base font-black text-white font-mono">₹${pts.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
+            <div class="text-[9px] text-emerald-400 font-bold">${pts.toLocaleString()} Points</div>
+          </div>
+        </div>
+
+        <!-- Default Redemption Code Bar inside Card -->
+        <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs">
+          <div class="flex items-center gap-1.5 font-mono">
+            <span class="text-[10px] text-slate-400">കോഡ്:</span>
+            <span class="font-black text-amber-400 text-xs px-1.5 py-0.5 rounded bg-slate-950 border border-amber-500/30">${redCode}</span>
+          </div>
+          <button type="button" onclick="openBatchDetailsModal('${b.id}')" class="text-[11px] font-black text-indigo-400 hover:text-indigo-300 flex items-center gap-1 cursor-pointer">
+            <span>വിശദാംശങ്ങൾ</span>
+            <span>&rarr;</span>
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// 9. Batch Selection & Combining Engine
+function toggleBatchSelection(batchId, isChecked) {
+  if (isChecked) {
+    state.selectedBatches.add(batchId);
+  } else {
+    state.selectedBatches.delete(batchId);
+  }
+
+  const card = document.getElementById(`batch-item-${batchId}`);
+  if (card) {
+    if (isChecked) {
+      card.classList.add('border-amber-500', 'bg-amber-500/10');
+      card.classList.remove('border-slate-800');
+    } else {
+      card.classList.remove('border-amber-500', 'bg-amber-500/10');
+      card.classList.add('border-slate-800');
+    }
+  }
+
+  updateCombineBar();
+}
+
+function updateCombineBar() {
+  const count = state.selectedBatches.size;
+  const statusEl = document.getElementById('combine-bar-status');
+  const detailsEl = document.getElementById('combine-bar-details');
+  const btn = document.getElementById('btn-view-combined');
+
+  if (count === 0) {
+    if (statusEl) statusEl.textContent = '0 ബാച്ചുകൾ തിരഞ്ഞെടുത്തു';
+    if (detailsEl) detailsEl.textContent = 'കംപൈൻ ചെയ്യാൻ ഒന്നിലധികം ബാച്ചുകൾ ടിക്ക് ചെയ്യുക';
+    if (btn) btn.disabled = true;
+  } else {
+    let totalPts = 0;
+    state.currentStoreBatches.forEach(b => {
+      if (state.selectedBatches.has(b.id)) {
+        totalPts += parseFloat(b.points_remaining || b.points_earned || 0);
+      }
+    });
+    const reqBill = totalPts * 10;
+
+    if (statusEl) statusEl.textContent = `${count} ബാച്ചുകൾ തിരഞ്ഞെടുത്തു (₹${totalPts.toLocaleString('en-IN', { minimumFractionDigits: 2 })} പോയിന്റുകൾ)`;
+    if (detailsEl) detailsEl.textContent = `മിനിമം ബിൽ തുക: ₹${reqBill.toLocaleString('en-IN', { minimumFractionDigits: 2 })} (10x Purchase Rule)`;
+    if (btn) btn.disabled = false;
+  }
+}
+
+// 10. Single Batch Details Modal
+function openBatchDetailsModal(batchId) {
+  const batch = (state.currentStoreBatches || []).find(b => b.id === batchId);
+  if (!batch) return;
+
+  const pts = parseFloat(batch.points_remaining || batch.points_earned || 0);
+  const reqBill = parseFloat(batch.required_bill_to_redeem || (pts * 10));
+  const redCode = batch.redemption_code || `OP-${batch.id.slice(-4)}-K82F`;
+
+  document.getElementById('bmodal-batch-id').textContent = `${batch.id} • ${batch.invoice_no || 'PURCHASE'}`;
+  document.getElementById('bmodal-points-display').textContent = `₹${pts.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+  document.getElementById('bmodal-points-subtitle').textContent = `${pts.toLocaleString()} OmniPoints (1 Pt = ₹1)`;
+  document.getElementById('bmodal-redemption-code').textContent = redCode;
+  document.getElementById('bmodal-maturity-date').textContent = batch.maturity_date || '23 Nov 2026';
+  document.getElementById('bmodal-expiry-date').textContent = batch.expiry_date ? batch.expiry_date.split(' ')[0] : '29 Nov 2026';
+  document.getElementById('bmodal-req-bill').textContent = `₹${reqBill.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+
+  openModal('batch-details-modal');
+}
+
+// 11. Combined Batches Modal
+function openCombinedBatchesModal() {
+  const selectedList = (state.currentStoreBatches || []).filter(b => state.selectedBatches.has(b.id));
+  if (selectedList.length === 0) return;
+
+  let totalPts = 0;
+  selectedList.forEach(b => {
+    totalPts += parseFloat(b.points_remaining || b.points_earned || 0);
+  });
+  const reqBill = totalPts * 10;
+
+  document.getElementById('cmodal-total-points').textContent = `₹${totalPts.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+  document.getElementById('cmodal-batch-count').textContent = `${selectedList.length} ബാച്ചുകൾ ഒരുമിപ്പിച്ചു`;
+  document.getElementById('cmodal-req-bill').textContent = `₹${reqBill.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+
+  const container = document.getElementById('cmodal-codes-list-container');
+  if (container) {
+    container.innerHTML = selectedList.map((b, idx) => {
+      const code = b.redemption_code || `OP-${b.id.slice(-4)}-K82F`;
+      const pts = parseFloat(b.points_remaining || 0);
+      return `
+        <div class="batch-code-box">
+          <div>
+            <div class="batch-code-text">${code}</div>
+            <div class="text-[10px] text-slate-400 mt-0.5">ബാച്ച് ${idx + 1}: ${b.id} • <strong>₹${pts.toLocaleString()} Pts</strong></div>
+          </div>
+          <button type="button" onclick="copyIndividualCode('${code}', this)" class="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs flex items-center gap-1 shadow transition cursor-pointer">
+            <span>📋</span><span>കോപ്പി</span>
+          </button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  state.activeCombinedCodesString = selectedList.map(b => b.redemption_code || `OP-${b.id.slice(-4)}-K82F`).join(', ');
+
+  openModal('combined-batches-modal');
+}
+
+// 12. Copy to Clipboard Handlers
+function copyBatchCode(elementId, btn) {
+  const el = document.getElementById(elementId);
+  const code = el ? el.textContent.trim() : '';
+  if (!code) return;
+
+  navigator.clipboard.writeText(code).then(() => {
+    const origText = btn.innerHTML;
+    btn.innerHTML = '<span>✓</span><span>കോപ്പി ചെയ്തു!</span>';
+    btn.classList.add('bg-emerald-400', 'text-slate-950');
+    setTimeout(() => {
+      btn.innerHTML = origText;
+      btn.classList.remove('bg-emerald-400');
+    }, 2000);
+  });
+}
+
+function copyIndividualCode(code, btn) {
+  navigator.clipboard.writeText(code).then(() => {
+    const origText = btn.innerHTML;
+    btn.innerHTML = '<span>✓</span><span>Done!</span>';
+    btn.classList.add('bg-emerald-400', 'text-slate-950');
+    setTimeout(() => {
+      btn.innerHTML = origText;
+      btn.classList.remove('bg-emerald-400');
+    }, 2000);
+  });
+}
+
+function copyAllCombinedCodes() {
+  const codes = state.activeCombinedCodesString || '';
+  if (!codes) return;
+
+  navigator.clipboard.writeText(codes).then(() => {
+    alert(`എല്ലാ ബാച്ച് കോഡുകളും കോപ്പി ചെയ്തു:
+${codes}
+
+ഇഎസ് പ്രോ ബില്ലിംഗ് കൗണ്ടറിൽ ഈ കോഡുകൾ നൽകുക.`);
+  });
+}

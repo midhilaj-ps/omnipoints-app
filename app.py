@@ -848,6 +848,7 @@ def calculate_customer_summary(phone):
     conn = get_db()
     cursor = conn.cursor()
     now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     # Total active points
     cursor.execute('''
@@ -909,6 +910,7 @@ def get_customer_business_ledger(phone):
     """
     conn = get_db()
     cursor = conn.cursor()
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     # 1. Overall Metrics across all firms
     cursor.execute('''
@@ -1089,6 +1091,7 @@ def serve_static_universal(filename):
 def list_customers():
     conn = get_db()
     cursor = conn.cursor()
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     cursor.execute('''
     SELECT c.phone, c.name, c.email, c.avatar_color, c.vip_tier,
            COUNT(DISTINCT i.id) as es_invoices_count,
@@ -1103,6 +1106,130 @@ def list_customers():
     conn.close()
     return jsonify({'success': True, 'customers': customers})
 
+
+@app.route('/api/auth/lookup-phone', methods=['POST'])
+def auth_lookup_phone():
+    """
+    Lightweight customer lookup by phone number.
+    Returns whether customer exists in our shop / partner firms.
+    """
+    data = request.json or {}
+    phone = normalize_phone(data.get('phone', ''))
+
+    if not phone or len(phone) < 10:
+        return jsonify({'success': False, 'message': 'Please enter a valid 10-digit mobile number'}), 400
+
+    conn = get_db()
+    cursor = conn.cursor()
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    cursor.execute('SELECT * FROM customers WHERE phone = ?', (phone,))
+    user = cursor.fetchone()
+
+    if not user:
+        # Also check if this phone has any batches in partner stores
+        cursor.execute('SELECT COUNT(*) FROM reward_batches WHERE customer_phone = ?', (phone,))
+        batch_count = cursor.fetchone()[0]
+        if batch_count == 0:
+            cursor.execute('SELECT COUNT(*) FROM firm_invoices WHERE customer_phone = ?', (phone,))
+            inv_count = cursor.fetchone()[0]
+            if inv_count == 0:
+                conn.close()
+                return jsonify({
+                    'success': True,
+                    'exists': False,
+                    'phone': phone,
+                    'message': 'New customer - not linked to any shop yet'
+                })
+
+    if not user:
+        # Create minimal customer record if found in partner invoices
+        now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        avatar_colors = ['#4F46E5', '#059669', '#EA580C', '#2563EB', '#DB2777', '#7C3AED']
+        color = random.choice(avatar_colors)
+        cursor.execute('''
+        INSERT INTO customers (phone, name, email, avatar_color, vip_tier, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ''', (phone, f"Customer {phone[-4:]}", f"{phone}@rewards.espro", color, 'Silver', now_str))
+        conn.commit()
+        cursor.execute('SELECT * FROM customers WHERE phone = ?', (phone,))
+        user = cursor.fetchone()
+
+    user_dict = dict(user)
+    conn.close()
+
+    summary = calculate_customer_summary(phone)
+    ledger = get_customer_business_ledger(phone)
+
+    return jsonify({
+        'success': True,
+        'exists': True,
+        'customer': user_dict,
+        'summary': summary,
+        'business_ledger': ledger
+    })
+
+@app.route('/api/auth/register-simple', methods=['POST'])
+def auth_register_simple():
+    """
+    Simple customer registration window handler.
+    Registers name, address, city, and pincode for a customer.
+    """
+    data = request.json or {}
+    phone = normalize_phone(data.get('phone', ''))
+    name = str(data.get('name', '')).strip()
+    address = str(data.get('address', '')).strip()
+    city = str(data.get('city', '')).strip()
+    pincode = str(data.get('pincode', '')).strip()
+
+    if not phone or len(phone) < 10:
+        return jsonify({'success': False, 'message': 'Valid 10-digit phone number is required'}), 400
+    if not name:
+        return jsonify({'success': False, 'message': 'Customer name is required'}), 400
+
+    conn = get_db()
+    cursor = conn.cursor()
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    cursor.execute('SELECT * FROM customers WHERE phone = ?', (phone,))
+    existing = cursor.fetchone()
+
+    avatar_colors = ['#4F46E5', '#059669', '#EA580C', '#2563EB', '#DB2777', '#7C3AED']
+    color = random.choice(avatar_colors)
+
+    if existing:
+        cursor.execute('''
+        UPDATE customers 
+        SET name = ?, address = ?, city = ?, pincode = ?
+        WHERE phone = ?
+        ''', (name, address, city, pincode, phone))
+    else:
+        cursor.execute('''
+        INSERT INTO customers (phone, name, email, avatar_color, vip_tier, address, city, pincode, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (phone, name, f"{phone}@rewards.espro", color, 'Silver', address, city, pincode, now_str))
+
+        # Welcome bonus scratch card
+        cursor.execute('''
+        INSERT INTO scratch_cards (id, customer_phone, title, points_reward, is_scratched, created_at)
+        VALUES (?, ?, ?, ?, 0, ?)
+        ''', (f"SC-WEL-{int(time.time())}", phone, '🎁 Welcome Gift Bonus Card', 50.00, now_str))
+
+    conn.commit()
+    cursor.execute('SELECT * FROM customers WHERE phone = ?', (phone,))
+    user = dict(cursor.fetchone())
+    conn.close()
+
+    summary = calculate_customer_summary(phone)
+    ledger = get_customer_business_ledger(phone)
+
+    return jsonify({
+        'success': True,
+        'customer': user,
+        'summary': summary,
+        'business_ledger': ledger
+    })
+
 @app.route('/api/auth/login', methods=['POST'])
 def login_or_register():
     data = request.json or {}
@@ -1114,6 +1241,7 @@ def login_or_register():
 
     conn = get_db()
     cursor = conn.cursor()
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     cursor.execute('SELECT * FROM customers WHERE phone = ?', (phone,))
     user = cursor.fetchone()
 
@@ -1167,6 +1295,7 @@ def auth_request_otp():
 
     conn = get_db()
     cursor = conn.cursor()
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     # Query multi-firm profiles for this phone
     cursor.execute('''
@@ -1260,6 +1389,7 @@ def auth_verify_otp():
 
     conn = get_db()
     cursor = conn.cursor()
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     cursor.execute('SELECT * FROM otp_verifications WHERE phone = ?', (phone,))
@@ -1347,6 +1477,7 @@ def update_customer_profile():
 
     conn = get_db()
     cursor = conn.cursor()
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     cursor.execute('SELECT * FROM customers WHERE phone = ?', (phone,))
     c = cursor.fetchone()
     now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -1395,6 +1526,7 @@ def get_firm_batches(firm_id):
     phone = normalize_phone(request.args.get('phone', ''))
     conn = get_db()
     cursor = conn.cursor()
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     cursor.execute('SELECT * FROM firms WHERE id = ?', (firm_id,))
     firm = cursor.fetchone()
@@ -1458,6 +1590,7 @@ def get_customer_settings(phone):
     phone = normalize_phone(phone)
     conn = get_db()
     cursor = conn.cursor()
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     cursor.execute('SELECT * FROM customers WHERE phone = ?', (phone,))
     cust = cursor.fetchone()
     if not cust:
@@ -1491,6 +1624,7 @@ def update_customer_settings(phone):
     data = request.json or {}
     conn = get_db()
     cursor = conn.cursor()
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     user_id = str(data.get('user_id', '')).strip().lower()
     password = str(data.get('password', '')).strip()
@@ -1558,6 +1692,7 @@ def erp_record_return():
     conn = get_db()
     cursor = conn.cursor()
     now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     # Verify firm
     cursor.execute('SELECT name FROM firms WHERE id = ?', (firm_id,))
@@ -1592,6 +1727,7 @@ def get_customer_wallet(phone):
     phone = str(phone).strip()
     conn = get_db()
     cursor = conn.cursor()
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     cursor.execute('SELECT * FROM customers WHERE phone = ?', (phone,))
@@ -1675,6 +1811,7 @@ def get_customer_wallet(phone):
 def get_firms():
     conn = get_db()
     cursor = conn.cursor()
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     cursor.execute('SELECT * FROM firms ORDER BY is_es_pro DESC, name ASC')
     firms = [dict(row) for row in cursor.fetchall()]
 
@@ -1694,6 +1831,7 @@ def get_firms():
 def get_firm_details(firm_id):
     conn = get_db()
     cursor = conn.cursor()
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     cursor.execute('SELECT * FROM firms WHERE id = ?', (firm_id,))
     firm = cursor.fetchone()
     if not firm:
@@ -1736,6 +1874,7 @@ def create_redemption_token():
 
     conn = get_db()
     cursor = conn.cursor()
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     # Verify firm exists
     cursor.execute('SELECT * FROM firms WHERE id = ?', (firm_id,))
@@ -1804,6 +1943,103 @@ def cashier_verify_and_deduct():
 
     conn = get_db()
     cursor = conn.cursor()
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    # Check direct batch redemption codes (single or combined: e.g. OP-9818-K82F or OP-9818-K82F, OP-4227-M39A)
+    candidate_codes = [c.strip().upper() for c in re.split(r'[,+\s]+', otp_or_token) if c.strip()]
+    if candidate_codes:
+        placeholders = ','.join(['?'] * len(candidate_codes))
+        cursor.execute(f'''
+        SELECT b.*, f.name as firm_name, f.min_purchase_multiplier, f.min_bill_amount,
+               f.max_redemption_pct, f.max_points_per_txn, c.name as customer_name
+        FROM reward_batches b
+        JOIN firms f ON b.firm_id = f.id
+        JOIN customers c ON b.customer_phone = c.phone
+        WHERE (UPPER(b.redemption_code) IN ({placeholders}) OR UPPER(b.id) IN ({placeholders}))
+        ''', candidate_codes + candidate_codes)
+
+        found_batches = [dict(r) for r in cursor.fetchall()]
+
+        if found_batches:
+            phone = found_batches[0]['customer_phone']
+            cust_name = found_batches[0]['customer_name']
+            multiplier = float(found_batches[0]['min_purchase_multiplier'] or 10.0)
+
+            for b in found_batches:
+                if b['status'] != 'ACTIVE' or float(b['points_remaining']) <= 0:
+                    conn.close()
+                    return jsonify({
+                        'success': False,
+                        'message': f"Batch {b['id']} ({b.get('redemption_code', '')}) has already been redeemed or is inactive."
+                    }), 400
+                if b['expiry_date'] and b['expiry_date'] < now_str:
+                    conn.close()
+                    return jsonify({
+                        'success': False,
+                        'message': f"Batch {b['id']} expired on {b['expiry_date']}."
+                    }), 400
+
+            total_points_to_deduct = sum(float(b['points_remaining']) for b in found_batches)
+
+            # Enforce 10x purchase multiplier rule
+            required_min_bill = total_points_to_deduct * multiplier
+            if bill_amount < required_min_bill:
+                conn.close()
+                return jsonify({
+                    'success': False,
+                    'message': f"ES PRO 10x Rule Violation: Current bill ₹{bill_amount:.2f} is lower than required ₹{required_min_bill:.2f} (10x rule for {total_points_to_deduct:.2f} Points)."
+                }), 400
+
+            # Execute Deduction
+            batches_affected = []
+            for b in found_batches:
+                pts = float(b['points_remaining'])
+                cursor.execute("UPDATE reward_batches SET points_remaining = 0, status = 'REDEEMED' WHERE id = ?", (b['id'],))
+                batches_affected.append({
+                    'batch_id': b['id'],
+                    'redemption_code': b.get('redemption_code'),
+                    'points_deducted': pts,
+                    'invoice_no': b['invoice_no']
+                })
+
+            txn_id = f"TXN-RED-{int(time.time())}-{random.randint(100, 999)}"
+            cursor.execute('''
+            INSERT INTO transactions (id, customer_phone, firm_id, type, points, amount, bill_amount, description, created_at)
+            VALUES (?, ?, ?, 'REDEMPTION', ?, ?, ?, ?, ?)
+            ''', (
+                txn_id, phone, found_batches[0]['firm_id'],
+                total_points_to_deduct, total_points_to_deduct, bill_amount,
+                f"Cashier Redeemed {len(found_batches)} Batch(es): {', '.join([b.get('redemption_code', b['id']) for b in found_batches])} via EEYES PRO",
+                now_str
+            ))
+
+            conn.commit()
+            conn.close()
+
+            try:
+                ws_notify('REDEMPTION_COMPLETED', {
+                    'customer_phone': phone,
+                    'customer_name': cust_name,
+                    'points_redeemed': total_points_to_deduct,
+                    'discount_inr': total_points_to_deduct,
+                    'new_bill_amount': max(0.0, bill_amount - total_points_to_deduct),
+                    'batches': batches_affected,
+                    'timestamp': now_str
+                })
+            except Exception as e:
+                print("WS notify error:", e)
+
+            return jsonify({
+                'success': True,
+                'message': f"Successfully verified! Redeemed {total_points_to_deduct:.2f} Points across {len(found_batches)} batch(es).",
+                'redeemed_points': total_points_to_deduct,
+                'discount_applied': total_points_to_deduct,
+                'new_bill_amount': max(0.0, bill_amount - total_points_to_deduct),
+                'customer_name': cust_name,
+                'customer_phone': phone,
+                'batches_affected': batches_affected
+            })
+
 
     # Look up token by OTP or token ID
     now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -1962,6 +2198,7 @@ def create_redemption_claim():
 
     conn = get_db()
     cursor = conn.cursor()
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     # Get customer name
     cursor.execute('SELECT name FROM customers WHERE phone = ?', (phone,))
@@ -2050,6 +2287,7 @@ def get_active_redemption_claims():
 
     conn = get_db()
     cursor = conn.cursor()
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     query = "SELECT * FROM pending_redemption_claims WHERE status = 'PENDING'"
     params = []
@@ -2151,6 +2389,7 @@ def get_pending_merchant_request():
 
     conn = get_db()
     cursor = conn.cursor()
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     cursor.execute('''
     SELECT * FROM merchant_redemption_requests
     WHERE (phone = ? OR phone = ? OR phone LIKE ?) AND status = 'PENDING'
@@ -2228,6 +2467,7 @@ def get_merchant_request_status(req_id):
     """
     conn = get_db()
     cursor = conn.cursor()
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     cursor.execute('SELECT * FROM merchant_redemption_requests WHERE id = ?', (req_id,))
     row = cursor.fetchone()
     conn.close()
@@ -2247,6 +2487,7 @@ def cancel_merchant_redemption_request():
 
     conn = get_db()
     cursor = conn.cursor()
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     cursor.execute("UPDATE merchant_redemption_requests SET status = 'CANCELLED', updated_at = ? WHERE id = ? AND status = 'PENDING'", (now_str, req_id))
     conn.commit()
@@ -2401,6 +2642,7 @@ def scratch_card():
 
     conn = get_db()
     cursor = conn.cursor()
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     cursor.execute('SELECT * FROM scratch_cards WHERE id = ? AND customer_phone = ?', (card_id, phone))
     card = cursor.fetchone()
 
@@ -2739,6 +2981,7 @@ def erp_get_customer(phone):
     phone = str(phone).strip().replace('+91', '').replace(' ', '').replace('-', '')
     conn = get_db()
     cursor = conn.cursor()
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     cursor.execute('SELECT * FROM customers WHERE phone = ?', (phone,))
     customer = cursor.fetchone()
     if not customer:
@@ -2759,6 +3002,7 @@ def erp_get_customer(phone):
     # Fetch store profiles
     conn = get_db()
     cursor = conn.cursor()
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     cursor.execute('''
     SELECT p.firm_id, f.name as firm_name, p.registered_name, p.account_no
     FROM firm_customer_profiles p
@@ -2793,6 +3037,7 @@ def erp_firm_rules():
     """Returns rule configurations for all firms for ERP synchronization"""
     conn = get_db()
     cursor = conn.cursor()
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     cursor.execute('SELECT id, name, category, min_purchase_multiplier, min_bill_amount, max_redemption_pct, max_points_per_txn, validity_days, next_day_redemption_only, rule_summary FROM firms')
     rules = [dict(row) for row in cursor.fetchall()]
     conn.close()
@@ -2914,13 +3159,15 @@ def sync_from_eeyes_pro(state_override=None):
                 req_bill = float(b.get('required_bill_amount', round(earned_amt * 10.0, 2)))
                 status = 'REDEEMED' if (b.get('is_redeemed') or bal_amt <= 0) else 'ACTIVE'
 
+                red_code = b.get('redemption_code') or f"OP-{b_id[-4:]}-K82F"
+                mat_date = b.get('maturity_date') or '2026-11-23'
                 cursor.execute('''
                 INSERT OR REPLACE INTO reward_batches (
                     id, customer_phone, firm_id, invoice_no, bill_amount,
                     points_earned, points_remaining, earned_date, expiry_date,
-                    required_bill_to_redeem, status, created_at
-                ) VALUES (?, ?, 'firm-es-pro', ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (b_id, phone, inv_no, b.get('bill_amount', req_bill), earned_amt, bal_amt, earned_date, exp_str, req_bill, status, now_str))
+                    required_bill_to_redeem, status, created_at, redemption_code, maturity_date
+                ) VALUES (?, ?, 'firm-es-pro', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (b_id, phone, inv_no, b.get('bill_amount', req_bill), earned_amt, bal_amt, earned_date, exp_str, req_bill, status, now_str, red_code, mat_date))
 
                 tx_id = f"TX-REW-{b_id}"
                 cursor.execute('''
@@ -2932,13 +3179,14 @@ def sync_from_eeyes_pro(state_override=None):
             b_id = f"BAT_EEYES_{phone}"
             exp_str = '2026-11-29 23:59:59'
             req_bill = round(pts * 10.0, 2)
+            fallback_code = f"OP-{phone[-4:]}-K82F"
             cursor.execute('''
             INSERT OR REPLACE INTO reward_batches (
                 id, customer_phone, firm_id, invoice_no, bill_amount,
                 points_earned, points_remaining, earned_date, expiry_date,
-                required_bill_to_redeem, status, created_at
-            ) VALUES (?, ?, 'firm-es-pro', 'OPENING-POINTS', ?, ?, ?, ?, ?, ?, 'ACTIVE', ?)
-            ''', (b_id, phone, req_bill, pts, pts, now.strftime('%Y-%m-%d'), exp_str, req_bill, now_str))
+                required_bill_to_redeem, status, created_at, redemption_code, maturity_date
+            ) VALUES (?, ?, 'firm-es-pro', 'OPENING-POINTS', ?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?, '2026-11-23')
+            ''', (b_id, phone, req_bill, pts, pts, now.strftime('%Y-%m-%d'), exp_str, req_bill, now_str, fallback_code))
 
     # 3. Sync Real Sales Invoices
     for inv in invoices:
