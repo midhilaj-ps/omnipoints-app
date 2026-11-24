@@ -1,4 +1,4 @@
-const CACHE_NAME = 'omnipoints-v5';
+const CACHE_NAME = 'eeyes-rippo-v1795530226';
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();
