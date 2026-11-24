@@ -84,7 +84,7 @@ function initAiNeuralCanvas() {
 }
 
 /**
- * OmniPoints - Centralized Multi-Firm Customer Reward Wallet
+ * Eeyes Rippo - Centralized Multi-Firm Customer Reward Wallet
  * Frontend Application Controller
  */
 
@@ -807,7 +807,7 @@ async function loginCustomer(phone, name = '') {
       alert(data.message || 'Login failed');
     }
   } catch (err) {
-    alert('Network error connecting to OmniPoints ERP server');
+    alert('Network error connecting to Eeyes Rippo server');
   }
 }
 
@@ -3410,7 +3410,7 @@ function openBatchDetailsModal(batchId) {
 
   document.getElementById('bmodal-batch-id').textContent = `${batch.id} • ${batch.invoice_no || 'PURCHASE'}`;
   document.getElementById('bmodal-points-display').textContent = `₹${pts.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
-  document.getElementById('bmodal-points-subtitle').textContent = `${pts.toLocaleString()} OmniPoints (1 Pt = ₹1)`;
+  document.getElementById('bmodal-points-subtitle').textContent = `${pts.toLocaleString()} Eeyes Rippo (1 Pt = ₹1)`;
   document.getElementById('bmodal-redemption-code').textContent = redCode;
   document.getElementById('bmodal-maturity-date').textContent = batch.maturity_date || '23 Nov 2026';
   document.getElementById('bmodal-expiry-date').textContent = batch.expiry_date ? batch.expiry_date.split(' ')[0] : '29 Nov 2026';

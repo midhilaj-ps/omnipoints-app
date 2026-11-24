@@ -1115,7 +1115,7 @@ def index():
     root_tpl = os.path.join(BASE_DIR, 'index.html')
     if os.path.exists(root_tpl):
         return send_from_directory(BASE_DIR, 'index.html')
-    return "OmniPoints Reward Service Running"
+    return "Eeyes Rippo Reward Service Running"
 
 @app.route('/manifest.json')
 def serve_manifest():
@@ -1123,7 +1123,7 @@ def serve_manifest():
         return send_from_directory(os.path.join(BASE_DIR, 'static'), 'manifest.json')
     if os.path.exists(os.path.join(BASE_DIR, 'manifest.json')):
         return send_from_directory(BASE_DIR, 'manifest.json')
-    return jsonify({"name": "OmniPoints", "start_url": "/"})
+    return jsonify({"name": "Eeyes Rippo", "start_url": "/"})
 
 @app.route('/sw.js')
 
@@ -2542,7 +2542,7 @@ def create_merchant_redemption_request():
         'customer_name': customer_name,
         'points': points,
         'firm_name': firm_name,
-        'message': f"Redemption request for ₹{points:.2f} successfully sent to customer's OmniPoints app"
+        'message': f"Redemption request for ₹{points:.2f} successfully sent to customer's Eeyes Rippo app"
     })
 
 @app.route('/api/redemption/pending-merchant-request', methods=['GET'])
@@ -3133,7 +3133,7 @@ def erp_register_customer():
 
     return jsonify({
         'success': True,
-        'message': f"{'Registered new' if is_new else 'Updated'} customer {name} in OmniPoints Network!",
+        'message': f"{'Registered new' if is_new else 'Updated'} customer {name} in Eeyes Rippo Network!",
         'is_new_customer': is_new,
         'customer': {
             'registered_id': registered_id,
@@ -3164,7 +3164,7 @@ def erp_get_customer(phone):
         return jsonify({
             'success': False,
             'registered': False,
-            'message': f'Customer {phone} is not yet registered in OmniPoints'
+            'message': f'Customer {phone} is not yet registered in Eeyes Rippo'
         }), 404
 
     customer_dict = dict(customer)
