@@ -271,6 +271,79 @@ function logoutCustomer() {
   }
 }
 
+
+// ==================== NEUMORPHIC BADGE ONBOARDING & LOGIN SLIDER ==================== //
+let currentLoginSlide = 1;
+
+function setLoginSlide(slideNum) {
+  currentLoginSlide = slideNum;
+  const s1 = document.getElementById('login-slide-1');
+  const s2 = document.getElementById('login-slide-2');
+  const s3 = document.getElementById('login-slide-3');
+  const d1 = document.getElementById('login-dot-1');
+  const d2 = document.getElementById('login-dot-2');
+  const d3 = document.getElementById('login-dot-3');
+  const skipBtn = document.getElementById('btn-login-skip');
+  const arrowBtn = document.getElementById('btn-login-arrow-action');
+
+  if (s1) s1.classList.toggle('hidden', slideNum !== 1);
+  if (s2) s2.classList.toggle('hidden', slideNum !== 2);
+  if (s3) s3.classList.toggle('hidden', slideNum !== 3);
+
+  const dots = [d1, d2, d3];
+  dots.forEach((dot, idx) => {
+    if (dot) {
+      if (idx + 1 === slideNum) {
+        dot.className = 'w-4 h-1.5 rounded-full bg-amber-500 shadow-xs transition-all';
+      } else {
+        dot.className = 'w-1.5 h-1.5 rounded-full bg-slate-300 transition-all';
+      }
+    }
+  });
+
+  if (skipBtn) {
+    if (slideNum === 1) skipBtn.innerText = 'Skip';
+    else if (slideNum === 2) skipBtn.innerText = '← Back';
+    else if (slideNum === 3) skipBtn.innerText = '← Phone';
+  }
+
+  if (arrowBtn) {
+    if (slideNum === 3) {
+      arrowBtn.innerHTML = '<span>✓</span>';
+      arrowBtn.classList.add('neu-btn-primary');
+    } else {
+      arrowBtn.innerHTML = '<span>&rarr;</span>';
+      arrowBtn.classList.remove('neu-btn-primary');
+    }
+  }
+}
+
+function loginSlideSkip() {
+  if (currentLoginSlide === 1) {
+    setLoginSlide(2);
+  } else if (currentLoginSlide === 2) {
+    setLoginSlide(1);
+  } else if (currentLoginSlide === 3) {
+    setLoginSlide(2);
+  }
+}
+
+async function onLoginArrowClick() {
+  if (currentLoginSlide === 1) {
+    setLoginSlide(2);
+  } else if (currentLoginSlide === 2) {
+    const phoneInput = document.getElementById('landing-phone-input');
+    let phoneVal = phoneInput ? phoneInput.value.trim() : '';
+    if (!phoneVal) {
+      phoneVal = '9656360650'; // Midhilaj PS default
+      if (phoneInput) phoneInput.value = phoneVal;
+    }
+    await requestLandingOtpFlow();
+  } else if (currentLoginSlide === 3) {
+    await verifyLandingOtpFlow();
+  }
+}
+
 function selectLandingCustomer(phone) {
   const input = document.getElementById('landing-phone-input');
   if (input) input.value = phone;
@@ -319,6 +392,7 @@ async function requestLandingOtpFlow() {
 
     document.getElementById('landing-otp-target-phone').innerText = `+91 ${phone}`;
     document.getElementById('landing-demo-otp-badge').innerText = data.demo_otp;
+    if (typeof setLoginSlide === 'function') setLoginSlide(3);
 
     // Render Name conflict / merge resolution if divergence
     const conflictBox = document.getElementById('landing-name-conflict-box');

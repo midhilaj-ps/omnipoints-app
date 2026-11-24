@@ -1059,6 +1059,14 @@ def serve_manifest():
     return jsonify({"name": "OmniPoints", "start_url": "/"})
 
 @app.route('/sw.js')
+
+@app.route('/mobile_connect_qr.png')
+def serve_qr():
+    for d in [os.path.join(BASE_DIR, 'static', 'icons'), BASE_DIR, os.path.join(BASE_DIR, 'static')]:
+        if os.path.exists(os.path.join(d, 'mobile_connect_qr.png')):
+            return send_from_directory(d, 'mobile_connect_qr.png', mimetype='image/png')
+    return ('Not found', 404)
+
 def serve_sw():
     if os.path.exists(os.path.join(BASE_DIR, 'static', 'sw.js')):
         return send_from_directory(os.path.join(BASE_DIR, 'static'), 'sw.js', mimetype='application/javascript')

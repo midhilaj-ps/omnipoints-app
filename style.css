@@ -556,3 +556,85 @@ input:checked + .toggle-slider {
 input:checked + .toggle-slider:before {
   transform: translateX(20px);
 }
+
+
+/* ==================== NEUMORPHIC LIGHT LOGIN THEME (INSPIRED BY USER BADGE DESIGN) ==================== */
+.neu-login-shell {
+  background: #F3F5F9;
+  color: #1E293B;
+  border-radius: 36px;
+  box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.15), inset 0 1px 1px #FFFFFF;
+}
+
+.neu-card-light {
+  background: #F3F5F9;
+  border-radius: 28px;
+  box-shadow: 12px 12px 28px #d5d9e2, -12px -12px 28px #ffffff;
+}
+
+.neu-inset-light {
+  background: #EBF0F7;
+  border-radius: 20px;
+  box-shadow: inset 3px 3px 6px #cbcfd8, inset -3px -3px 6px #ffffff;
+}
+
+.neu-btn-circle {
+  background: #F3F5F9;
+  border-radius: 9999px;
+  box-shadow: 6px 6px 14px #d2d6df, -6px -6px 14px #ffffff;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.neu-btn-circle:hover {
+  box-shadow: 8px 8px 18px #cbd0da, -8px -8px 18px #ffffff;
+  transform: translateY(-1px);
+}
+
+.neu-btn-circle:active {
+  box-shadow: inset 3px 3px 6px #cbcfd8, inset -3px -3px 6px #ffffff;
+  transform: translateY(1px);
+}
+
+.neu-chip {
+  background: #F3F5F9;
+  border-radius: 16px;
+  box-shadow: 4px 4px 10px #d5d9e2, -4px -4px 10px #ffffff;
+  transition: all 0.2s ease;
+}
+
+.neu-chip:hover {
+  box-shadow: 6px 6px 14px #cbcfd8, -6px -6px 14px #ffffff;
+  transform: translateY(-1px);
+}
+
+.neu-chip.active-chip {
+  background: #EBF0F7;
+  box-shadow: inset 3px 3px 6px #cbcfd8, inset -3px -3px 6px #ffffff;
+  border: 1.5px solid #F59E0B;
+}
+
+@keyframes badgeHeroFloat {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-7px) rotate(0.6deg); }
+}
+.badge-hero-animated {
+  animation: badgeHeroFloat 3.8s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@keyframes beadOrbitGlide {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(26px); }
+}
+.bead-orbit-animated {
+  animation: beadOrbitGlide 3.2s ease-in-out infinite alternate;
+}
+
+@keyframes ringsRadarPulse {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50% { opacity: 0.95; transform: scale(1.025); }
+}
+.rings-radar-animated {
+  animation: ringsRadarPulse 3s ease-in-out infinite;
+  transform-origin: 160px 115px;
+}

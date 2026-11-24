@@ -1,4 +1,4 @@
-const CACHE_NAME = 'omnipoints-v4';
+const CACHE_NAME = 'omnipoints-v5';
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();

@@ -1,0 +1,640 @@
+/* OmniPoints App - Modern Native Mobile App Styling */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+
+:root {
+  --primary: #4F46E5;
+  --primary-dark: #3730A3;
+  --accent: #10B981;
+  --gold: #F59E0B;
+  --bg-dark: #0B0F19;
+  --card-dark: #131B2E;
+  --card-border: rgba(255, 255, 255, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: #030712;
+  color: #F8FAFC;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow-x: hidden;
+}
+
+/* Device Shell Simulator (For Desktop Viewing) */
+.device-container {
+  width: 100%;
+  max-width: 440px;
+  height: 920px;
+  background: #090D16;
+  border-radius: 48px;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9), 0 0 0 12px #1F293D, 0 0 0 14px #374151;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+/* Fullscreen Mobile View for actual phones */
+@media (max-width: 640px) {
+  body {
+    background-color: #090D16;
+  }
+  .device-container {
+    max-width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+    box-shadow: none;
+    border: none;
+  }
+  .device-chrome-header, .device-switcher-bar {
+    display: none !important;
+  }
+}
+
+/* Top Dynamic Island / Notch */
+.dynamic-island-bar {
+  height: 44px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  z-index: 50;
+  background: transparent;
+  user-select: none;
+}
+
+.dynamic-island-pill {
+  width: 110px;
+  height: 24px;
+  background: #000;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  font-size: 10px;
+  color: #94A3B8;
+}
+
+/* App Scrollable Viewport */
+.app-viewport {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  padding-bottom: 96px; /* Space for bottom nav */
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+
+.app-viewport::-webkit-scrollbar {
+  display: none;
+}
+
+/* Glassmorphism Cards */
+.glass-card {
+  background: rgba(26, 34, 53, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+}
+
+.glass-card-glow {
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.15) 0%, rgba(16, 185, 129, 0.08) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  box-shadow: 0 10px 30px -10px rgba(79, 70, 229, 0.2);
+}
+
+/* Centralized Wallet Card */
+.wallet-hero-card {
+  background: linear-gradient(135deg, #1E1B4B 0%, #0F172A 50%, #064E3B 100%);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.wallet-hero-card::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at 75% 25%, rgba(16, 185, 129, 0.15) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* Batch Card Expiry Pulsing */
+.batch-expiring-alert {
+  border-color: rgba(239, 68, 68, 0.5) !important;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(30, 27, 75, 0.6) 100%) !important;
+  animation: pulseAlert 2.5s infinite;
+}
+
+@keyframes pulseAlert {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 16px 2px rgba(239, 68, 68, 0.3);
+  }
+}
+
+/* Bottom Navigation Bar */
+.bottom-nav {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 12px 14px 12px;
+  z-index: 40;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748B;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 14px;
+}
+
+.nav-item.active {
+  color: #38BDF8;
+}
+
+.nav-item.active .nav-icon {
+  transform: translateY(-2px);
+  color: #38BDF8;
+}
+
+.nav-fab-qr {
+  position: relative;
+  top: -18px;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4F46E5 0%, #06B6D4 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 10px 25px -5px rgba(6, 182, 212, 0.5), 0 0 0 5px #090D16;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.nav-fab-qr:active {
+  transform: scale(0.92);
+}
+
+/* Modern Pill Badges */
+.pill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* QR Code Display Canvas */
+.qr-container {
+  background: white;
+  padding: 16px;
+  border-radius: 20px;
+  display: inline-flex;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+}
+
+/* Scratch Card Canvas */
+.scratch-card-box {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  border-radius: 20px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.4);
+}
+
+.scratch-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  cursor: pointer;
+}
+
+/* Confetti canvas */
+#confetti-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* Modal Bottom Sheets */
+.bottom-sheet {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #0F172A;
+  border-top-left-radius: 32px;
+  border-top-right-radius: 32px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 -20px 50px rgba(0, 0, 0, 0.8);
+  z-index: 60;
+  max-height: 85%;
+  overflow-y: auto;
+  transform: translateY(105%);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bottom-sheet.open {
+  transform: translateY(0);
+}
+
+.sheet-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 55;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.sheet-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Horizontal scroll category chips */
+.chip-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 0;
+  scrollbar-width: none;
+}
+.chip-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.chip-btn {
+  white-space: nowrap;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #1E293B;
+  color: #94A3B8;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.2s ease;
+}
+
+.chip-btn.active {
+  background: #4F46E5;
+  color: white;
+  border-color: #6366F1;
+}
+
+/* Animations */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Live Countdown Digit Box */
+.timer-pill {
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+}
+
+/* ========================================================
+   BUSINESS-SPECIFIC UI ANIMATIONS & PREMIUM STYLING
+   Supermarket (Groceries), Petroleum (Fuel), Tech Lounge, Cafe, Gold Rewards
+   ======================================================== */
+
+/* 1. Floating Gold Coins */
+@keyframes floatCoin {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg) scale(1);
+    filter: drop-shadow(0 4px 6px rgba(245, 158, 11, 0.4));
+  }
+  50% {
+    transform: translateY(-8px) rotate(6deg) scale(1.05);
+    filter: drop-shadow(0 10px 14px rgba(245, 158, 11, 0.7));
+  }
+}
+
+.animate-float-coin {
+  animation: floatCoin 3s ease-in-out infinite;
+}
+
+.animate-float-coin-delayed {
+  animation: floatCoin 3.6s ease-in-out infinite 0.8s;
+}
+
+/* 2. Supermarket Barcode Laser Scan Beam */
+@keyframes laserScan {
+  0% {
+    top: 0%;
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    top: 96%;
+    opacity: 0.2;
+  }
+}
+
+.laser-scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #10B981, #34D399, transparent);
+  box-shadow: 0 0 10px #10B981, 0 0 4px #34D399;
+  animation: laserScan 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  pointer-events: none;
+}
+
+/* 3. Supermarket Shopping Cart Bounce & Roll */
+@keyframes cartBounce {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-3px) rotate(-3deg);
+  }
+  75% {
+    transform: translateY(-1px) rotate(2deg);
+  }
+}
+
+.animate-cart-bounce {
+  display: inline-block;
+  animation: cartBounce 1.8s ease-in-out infinite;
+}
+
+/* 4. Petroleum Fuel Dispenser Pulse & Glow */
+@keyframes fuelPulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 2px rgba(234, 88, 12, 0.4));
+  }
+  50% {
+    transform: scale(1.08);
+    filter: drop-shadow(0 0 10px rgba(234, 88, 12, 0.8));
+  }
+}
+
+.animate-fuel-pulse {
+  display: inline-block;
+  animation: fuelPulse 2.2s ease-in-out infinite;
+}
+
+/* 5. Steaming Artisan Coffee Cup Aroma Wisps */
+@keyframes steamRise {
+  0% {
+    transform: translateY(0) scaleX(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateY(-6px) scaleX(1.3);
+    opacity: 0.4;
+  }
+  100% {
+    transform: translateY(-12px) scaleX(1.6);
+    opacity: 0;
+  }
+}
+
+.animate-steam {
+  animation: steamRise 2s ease-out infinite;
+}
+
+/* 6. Tech Lounge Neon Pulse */
+@keyframes neonPulse {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.3), inset 0 0 8px rgba(59, 130, 246, 0.2);
+    border-color: rgba(99, 102, 241, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.7), inset 0 0 12px rgba(99, 102, 241, 0.4);
+    border-color: rgba(129, 140, 248, 0.9);
+  }
+}
+
+.animate-neon-pulse {
+  animation: neonPulse 2.8s ease-in-out infinite;
+}
+
+/* 7. Shimmer Card Flow */
+@keyframes shimmerGleam {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer-bg {
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 100%);
+  background-size: 200% 100%;
+  animation: shimmerGleam 4s infinite linear;
+}
+
+/* 8. Live Business Micro-Ticker */
+@keyframes tickerSlide {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.ticker-track {
+  display: flex;
+  width: max-content;
+  animation: tickerSlide 22s linear infinite;
+}
+
+.ticker-track:hover {
+  animation-play-state: paused;
+}
+
+/* 9. iOS Toggle Switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #334155;
+  transition: .3s;
+  border-radius: 24px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: '';
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .3s;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+input:checked + .toggle-slider {
+  background-color: #10B981;
+}
+
+input:checked + .toggle-slider:before {
+  transform: translateX(20px);
+}
+
+
+/* ==================== NEUMORPHIC LIGHT LOGIN THEME (INSPIRED BY USER BADGE DESIGN) ==================== */
+.neu-login-shell {
+  background: #F3F5F9;
+  color: #1E293B;
+  border-radius: 36px;
+  box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.15), inset 0 1px 1px #FFFFFF;
+}
+
+.neu-card-light {
+  background: #F3F5F9;
+  border-radius: 28px;
+  box-shadow: 12px 12px 28px #d5d9e2, -12px -12px 28px #ffffff;
+}
+
+.neu-inset-light {
+  background: #EBF0F7;
+  border-radius: 20px;
+  box-shadow: inset 3px 3px 6px #cbcfd8, inset -3px -3px 6px #ffffff;
+}
+
+.neu-btn-circle {
+  background: #F3F5F9;
+  border-radius: 9999px;
+  box-shadow: 6px 6px 14px #d2d6df, -6px -6px 14px #ffffff;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.neu-btn-circle:hover {
+  box-shadow: 8px 8px 18px #cbd0da, -8px -8px 18px #ffffff;
+  transform: translateY(-1px);
+}
+
+.neu-btn-circle:active {
+  box-shadow: inset 3px 3px 6px #cbcfd8, inset -3px -3px 6px #ffffff;
+  transform: translateY(1px);
+}
+
+.neu-chip {
+  background: #F3F5F9;
+  border-radius: 16px;
+  box-shadow: 4px 4px 10px #d5d9e2, -4px -4px 10px #ffffff;
+  transition: all 0.2s ease;
+}
+
+.neu-chip:hover {
+  box-shadow: 6px 6px 14px #cbcfd8, -6px -6px 14px #ffffff;
+  transform: translateY(-1px);
+}
+
+.neu-chip.active-chip {
+  background: #EBF0F7;
+  box-shadow: inset 3px 3px 6px #cbcfd8, inset -3px -3px 6px #ffffff;
+  border: 1.5px solid #F59E0B;
+}
+
+@keyframes badgeHeroFloat {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-7px) rotate(0.6deg); }
+}
+.badge-hero-animated {
+  animation: badgeHeroFloat 3.8s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@keyframes beadOrbitGlide {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(26px); }
+}
+.bead-orbit-animated {
+  animation: beadOrbitGlide 3.2s ease-in-out infinite alternate;
+}
+
+@keyframes ringsRadarPulse {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50% { opacity: 0.95; transform: scale(1.025); }
+}
+.rings-radar-animated {
+  animation: ringsRadarPulse 3s ease-in-out infinite;
+  transform-origin: 160px 115px;
+}

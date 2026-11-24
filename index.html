@@ -29,7 +29,7 @@
     }
   </script>
   
-  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="/static/css/style.css?v=20261123_v5">
 </head>
 <body>
 
@@ -65,6 +65,7 @@
       <button onclick="openModal('customer-registration-modal')" class="px-2.5 py-1 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-[11px] flex items-center gap-1 shadow transition">
         <span>➕</span> Register Customer
       </button>
+      <button onclick="openModal('mobile-connect-modal')" id="btn-desktop-mobile-qr" class="px-2.5 py-1 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 text-white font-extrabold text-[11px] flex items-center gap-1.5 shadow-md transition cursor-pointer"><span>📱</span><span>ഫോണിൽ തുറക്കുക</span></button>
       <button onclick="openSettingsModal()" id="btn-desktop-settings" class="px-2.5 py-1 rounded-xl bg-slate-800/90 text-slate-200 font-bold text-[11px] hover:bg-slate-700 border border-slate-700 transition cursor-pointer flex items-center gap-1.5 shadow-xs">
         <span class="text-xs">⚙️</span> Settings
       </button>
@@ -143,6 +144,7 @@
         <button onclick="syncEeyesPro()" title="Sync EEYES PRO Desktop ERP (localhost:3000)" class="w-8 h-8 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 text-white flex items-center justify-center text-xs font-bold transition shadow cursor-pointer" id="mobile-eeyes-sync-btn">
           🔄
         </button>
+        <button onclick="openModal('mobile-connect-modal')" title="Connect Phone via QR" class="px-2 py-1.5 rounded-xl bg-indigo-600/30 border border-indigo-500/40 text-indigo-300 flex items-center gap-1 text-[11px] font-bold hover:bg-indigo-600/50 transition cursor-pointer" id="btn-mobile-qr-link"><span>📱</span> QR</button>
         <button onclick="openSettingsModal()" title="Settings & Security" class="px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white flex items-center gap-1.5 text-[11px] font-bold transition border border-slate-700 shadow-xs cursor-pointer" id="btn-mobile-settings">
           <span class="text-xs">⚙️</span>
           <span>Settings</span>
@@ -154,139 +156,268 @@
     <div class="app-viewport px-4 pt-3">
 
       <!-- ==================== VIEW 0: LOGIN & ONBOARDING INTERFACE ==================== -->
-      <section id="view-login" class="tab-view active animate-fade-in py-2 relative overflow-hidden rounded-3xl min-h-[460px] flex flex-col justify-center">
-        <canvas id="ai-neural-canvas" class="absolute inset-0 w-full h-full pointer-events-none z-0"></canvas>
-        <div class="relative z-10 w-full">
-        <div class="text-center mb-5">
-          <div class="w-16 h-16 rounded-3xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-amber-500 mx-auto flex items-center justify-center text-3xl shadow-xl border border-white/20 mb-3 animate-pulse">
-            🎁
+            <!-- ==================== VIEW 0: LOGIN & ONBOARDING INTERFACE (INSPIRED BY USER BADGE DESIGN) ==================== -->
+      <section id="view-login" class="tab-view active animate-fade-in p-4 relative overflow-hidden neu-login-shell min-h-[580px] flex flex-col justify-between select-none">
+        
+        <!-- Top App Badge Pill -->
+        <div class="flex items-center justify-between pb-2 border-b border-slate-200/80">
+          <div class="flex items-center gap-1.5">
+            <span class="w-6 h-6 rounded-lg bg-gradient-to-tr from-amber-400 to-amber-600 flex items-center justify-center text-white text-xs font-black shadow-xs">★</span>
+            <span class="font-black text-slate-800 text-xs tracking-tight">OmniPoints</span>
           </div>
-          <h1 class="text-lg font-black text-white tracking-tight">OmniPoints</h1>
-          <p class="text-xs text-amber-400 font-extrabold uppercase tracking-wider">സെൻട്രലൈസ്ഡ് റിവാർഡ് വാലറ്റ്</p>
-          <p class="text-[11px] text-slate-400 mt-0.5">Powered by EEYES PRO ERP & Unified Partner Stores</p>
+          <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700">Centralized Wallet</span>
         </div>
 
-        <!-- Login Card -->
-        <div class="glass-card p-4 rounded-3xl border border-slate-700/80 shadow-2xl space-y-4">
-          <!-- Step 1: Mobile Number Input -->
-          <div id="landing-login-step-phone" class="space-y-3.5">
-            <div>
-              <div class="flex items-center justify-between mb-1">
-                <label class="text-xs font-bold text-white flex items-center gap-1.5">
-                  <span>📱</span>
-                  <span>രജിസ്റ്റർ ചെയ്ത മൊബൈൽ നമ്പർ നൽകുക</span>
-                </label>
-                <span class="text-[10px] text-slate-400">10-Digit Mobile</span>
-              </div>
-              <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 font-bold text-xs">
-                  🇮🇳 +91
-                </div>
-                <input id="landing-phone-input" type="tel" maxlength="10" placeholder="e.g. 9822012345" class="w-full bg-slate-900 border border-slate-700 rounded-2xl pl-16 pr-3 py-3 text-base text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner">
-              </div>
-              <p class="text-[10px] text-slate-400 mt-1">ഈ മൊബൈൽ നമ്പറുമായി ബന്ധപ്പെട്ട എല്ലാ ഫേമുകളിലെയും വിവരങ്ങളും റിവാർഡുകളും ഒരൊറ്റ വാലറ്റിൽ ലഭ്യമാകും.</p>
-            </div>
+        <!-- ==================== SLIDE 1: EARN BADGES (EXACT INSPIRATION DESIGN) ==================== -->
+        <div id="login-slide-1" class="login-slide-panel flex-1 flex flex-col justify-center py-2 transition-all duration-300">
+          <!-- Center 3D Badge & Orbital System -->
+          <div class="relative w-full h-[260px] flex items-center justify-center my-auto">
+            <svg viewBox="0 0 320 280" class="w-full h-full select-none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <radialGradient id="auraGlow" cx="50%" cy="45%" r="50%">
+                  <stop offset="0%" stop-color="#FEF3C7" stop-opacity="0.95"/>
+                  <stop offset="50%" stop-color="#FDE68A" stop-opacity="0.3"/>
+                  <stop offset="100%" stop-color="#F3F5F9" stop-opacity="0"/>
+                </radialGradient>
+                
+                <linearGradient id="goldHexOuter" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#FDE68A"/>
+                  <stop offset="35%" stop-color="#F59E0B"/>
+                  <stop offset="100%" stop-color="#D97706"/>
+                </linearGradient>
 
-            <!-- Quick Login Customer Shortcuts -->
-            <div>
-              <div class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
-                <span>Quick Select Customer:</span>
-                <span class="text-[9px] text-emerald-400 font-bold">EEYES PRO & Partners</span>
-              </div>
-              <div class="grid grid-cols-2 gap-2 text-left">
-                <button type="button" onclick="selectLandingCustomer('9822012345')" class="p-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-emerald-500/30 hover:border-emerald-400 transition cursor-pointer flex flex-col justify-between">
-                  <div class="font-extrabold text-white text-[11px] truncate flex items-center gap-1">
-                    <span>🏪</span><span>Ramesh Supermarket</span>
-                  </div>
-                  <div class="text-[9px] font-mono text-emerald-400 mt-1 font-bold">+91 9822012345</div>
-                  <div class="text-[8px] text-slate-400 mt-0.5">EEYES PRO Store</div>
-                </button>
-                <button type="button" onclick="selectLandingCustomer('9946889900')" class="p-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-emerald-500/30 hover:border-emerald-400 transition cursor-pointer flex flex-col justify-between">
-                  <div class="font-extrabold text-white text-[11px] truncate flex items-center gap-1">
-                    <span>🏪</span><span>Malabar Spices</span>
-                  </div>
-                  <div class="text-[9px] font-mono text-emerald-400 mt-1 font-bold">+91 9946889900</div>
-                  <div class="text-[8px] text-slate-400 mt-0.5">EEYES PRO Store</div>
-                </button>
-                <button type="button" onclick="selectLandingCustomer('9890123456')" class="p-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-slate-700 hover:border-slate-500 transition cursor-pointer flex flex-col justify-between">
-                  <div class="font-extrabold text-white text-[11px] truncate flex items-center gap-1">
-                    <span>🏪</span><span>Anjali Kirana</span>
-                  </div>
-                  <div class="text-[9px] font-mono text-indigo-400 mt-1 font-bold">+91 9890123456</div>
-                  <div class="text-[8px] text-slate-400 mt-0.5">EEYES PRO Store</div>
-                </button>
-                <button type="button" onclick="selectLandingCustomer('9876543210')" class="p-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-slate-700 hover:border-slate-500 transition cursor-pointer flex flex-col justify-between">
-                  <div class="font-extrabold text-white text-[11px] truncate flex items-center gap-1">
-                    <span>👤</span><span>Rahul Sharma</span>
-                  </div>
-                  <div class="text-[9px] font-mono text-indigo-400 mt-1 font-bold">+91 9876543210</div>
-                  <div class="text-[8px] text-amber-400 mt-0.5">Multi-Store Name Divergence</div>
-                </button>
-              </div>
-            </div>
+                <linearGradient id="goldHexInner" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#FBBF24"/>
+                  <stop offset="100%" stop-color="#B45309"/>
+                </linearGradient>
 
-            <button type="button" id="btn-landing-request-otp" onclick="requestLandingOtpFlow()" class="w-full py-3.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white font-black text-xs rounded-2xl shadow-lg transition flex items-center justify-center gap-2 cursor-pointer transform hover:scale-[1.01]">
-              <span>തുടരുക / Get OTP (ലോഗിൻ ചെയ്യുക)</span>
-              <span>&rarr;</span>
-            </button>
+                <linearGradient id="starGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#B45309"/>
+                  <stop offset="100%" stop-color="#78350F"/>
+                </linearGradient>
+
+                <linearGradient id="blueRibbon" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#3B82F6"/>
+                  <stop offset="100%" stop-color="#1D4ED8"/>
+                </linearGradient>
+
+                <filter id="badgeShadow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#D97706" flood-opacity="0.26"/>
+                </filter>
+              </defs>
+
+              <!-- Radial Aura Behind Badge -->
+              <circle cx="160" cy="115" r="115" fill="url(#auraGlow)"/>
+
+              <!-- Concentric Orbital Radar Rings -->
+              <g class="rings-radar-animated">
+                <circle cx="160" cy="115" r="110" fill="none" stroke="#DDE2EC" stroke-width="1.2" stroke-dasharray="4 4"/>
+                <circle cx="160" cy="115" r="85" fill="none" stroke="#DDE2EC" stroke-width="1.4"/>
+                <circle cx="160" cy="115" r="62" fill="none" stroke="#CBD5E1" stroke-width="1.2"/>
+              </g>
+
+              <!-- Lower Orbital Smile Arc Track -->
+              <path d="M 68 195 A 110 75 0 0 0 252 195" fill="none" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+
+              <!-- Arc Left Cross Marker (+) -->
+              <g stroke="#475569" stroke-width="2.2" stroke-linecap="round">
+                <line x1="62" y1="195" x2="74" y2="195"/>
+                <line x1="68" y1="189" x2="68" y2="201"/>
+              </g>
+
+              <!-- Arc Right Cross Marker (+) -->
+              <g stroke="#475569" stroke-width="2.2" stroke-linecap="round">
+                <line x1="246" y1="195" x2="258" y2="195"/>
+                <line x1="252" y1="189" x2="252" y2="201"/>
+              </g>
+
+              <!-- Sliding Glowing Golden Planet / Bead -->
+              <g class="bead-orbit-animated">
+                <circle cx="150" cy="220" r="7" fill="#F59E0B" filter="drop-shadow(0 2px 6px rgba(245, 158, 11, 0.7))"/>
+                <circle cx="148" cy="218" r="2.2" fill="#FEF3C7"/>
+              </g>
+
+              <!-- 3D GOLDEN HEXAGON BADGE WITH BLUE RIBBONS -->
+              <g class="badge-hero-animated" filter="url(#badgeShadow)">
+                <!-- Left Ribbon Tail -->
+                <path d="M 124 130 L 124 182 L 138 171 L 152 182 L 152 130 Z" fill="url(#blueRibbon)"/>
+                <path d="M 124 130 L 138 141 L 138 171 L 124 182 Z" fill="#1E40AF" opacity="0.35"/>
+                
+                <!-- Right Ribbon Tail -->
+                <path d="M 168 130 L 168 182 L 182 171 L 196 182 L 196 130 Z" fill="url(#blueRibbon)"/>
+                <path d="M 182 141 L 196 130 L 196 182 L 182 171 Z" fill="#1E40AF" opacity="0.35"/>
+
+                <!-- Outer Hexagon Plaque -->
+                <polygon points="160,56 208,84 208,138 160,166 112,138 112,84" fill="url(#goldHexOuter)"/>
+                
+                <!-- 3D Bevel Facets -->
+                <polygon points="160,56 208,84 196,91 160,70 124,91 112,84" fill="#FEF3C7" opacity="0.9"/>
+                <polygon points="208,84 208,138 196,131 196,91" fill="#D97706" opacity="0.5"/>
+                <polygon points="208,138 160,166 160,153 196,131" fill="#B45309" opacity="0.7"/>
+                <polygon points="160,166 112,138 124,131 160,153" fill="#78350F" opacity="0.5"/>
+                <polygon points="112,138 112,84 124,91 124,131" fill="#FBBF24" opacity="0.7"/>
+
+                <!-- Inner Hexagon Bed -->
+                <polygon points="160,70 196,91 196,131 160,153 124,131 124,91" fill="url(#goldHexInner)"/>
+                <polygon points="160,73 193,92 193,129 160,150 127,129 127,92" fill="none" stroke="#FDE68A" stroke-width="1.2" opacity="0.75"/>
+
+                <!-- Engraved Star in Center -->
+                <polygon points="160,92 164,104 176,104 167,112 170.5,124 160,117 149.5,124 153,112 144,104 156,104" fill="url(#starGradient)"/>
+                <polygon points="160,94 163.5,104 173,104 166,111 169,121 160,115 151,121 154,111 147,104 156.5,104" fill="#F59E0B" opacity="0.45"/>
+              </g>
+            </svg>
           </div>
 
-          <!-- Step 2: OTP Entry & Multi-Firm Name Resolution -->
-          <div id="landing-login-step-otp" class="space-y-3.5 hidden">
-            <!-- Target Phone Banner -->
-            <div class="p-2.5 rounded-2xl bg-indigo-950/60 border border-indigo-500/30 flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <span class="text-base">📲</span>
-                <div>
-                  <div class="text-[10px] text-slate-400">OTP Sent to:</div>
-                  <div class="font-mono font-bold text-white text-xs" id="landing-otp-target-phone">+91 9822012345</div>
-                </div>
-              </div>
-              <button type="button" onclick="backToLandingPhoneStep()" class="text-[11px] font-bold text-indigo-400 hover:text-indigo-300 cursor-pointer">Change Phone</button>
+          <!-- Typography Matching User Image -->
+          <div class="px-2 mt-2 space-y-1.5 text-left">
+            <h2 class="text-2xl font-black text-slate-900 tracking-tight">Earn Badges</h2>
+            <div class="text-[11px] font-bold text-amber-600 flex items-center gap-1">
+              <span>🏅</span><span>സമ്പാദിക്കൂ സ്മാർട്ട് റിവാർഡുകൾ</span>
             </div>
+            <p class="text-xs font-medium text-slate-500 leading-relaxed">
+              Get badges as you grow your account. Badges unlock benefits & discounts for you across our partner supermarkets and stores.
+            </p>
+          </div>
+        </div>
 
-            <!-- OTP Input -->
-            <div>
-              <div class="flex items-center justify-between mb-1.5">
-                <label class="font-bold text-slate-200 text-xs">Enter 6-Digit OTP (ഒടിപി നൽകുക)</label>
-                <button type="button" id="btn-landing-autofill-otp" onclick="autoFillLandingDemoOtp()" class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition cursor-pointer">
-                  Auto-Fill OTP: <span id="landing-demo-otp-badge" class="font-mono">------</span>
-                </button>
-              </div>
-              <input id="landing-otp-input" type="text" maxlength="6" placeholder="• • • • • •" class="w-full bg-slate-900 border border-slate-700 rounded-2xl px-3 py-3 text-center text-2xl tracking-[0.4em] text-amber-400 font-mono font-black focus:outline-none focus:border-amber-400 shadow-inner">
+        <!-- ==================== SLIDE 2: PHONE NUMBER ENTRY (NEUMORPHIC LIGHT) ==================== -->
+        <div id="login-slide-2" class="login-slide-panel hidden flex-1 flex flex-col justify-center py-2 transition-all duration-300 space-y-3.5">
+          <div class="text-left space-y-1">
+            <div class="w-10 h-10 rounded-2xl bg-amber-500/15 text-amber-600 flex items-center justify-center text-lg font-bold">
+              📱
             </div>
+            <h3 class="text-xl font-black text-slate-900 tracking-tight">സ്മാർട്ട് ലോഗിൻ (Sign In)</h3>
+            <p class="text-xs font-medium text-slate-500">മൊബൈൽ നമ്പർ നൽകി തൽക്ഷണം സെൻട്രലൈസ്ഡ് വാലറ്റിലേക്ക് പ്രവേശിക്കുക.</p>
+          </div>
 
-            <!-- Multi-Firm Name Resolution Section -->
-            <div id="landing-name-conflict-box" class="p-3.5 rounded-2xl bg-slate-900/90 border border-amber-500/30 hidden">
-              <div class="flex items-center gap-2 mb-2">
-                <span class="text-base">🔀</span>
-                <div>
-                  <div class="font-bold text-white text-xs">Cross-Store Profile Name Conflict</div>
-                  <div class="text-[10px] text-slate-400">Registered with different names across partner firms.</div>
+          <!-- Mobile Input Box -->
+          <div class="space-y-1">
+            <label class="text-[11px] font-bold text-slate-700 flex items-center justify-between">
+              <span>രജിസ്റ്റർ ചെയ്ത മൊബൈൽ നമ്പർ</span>
+              <span class="text-[10px] text-slate-400 font-mono">10-Digit Mobile</span>
+            </label>
+            <div class="relative neu-inset-light p-1 rounded-2xl flex items-center">
+              <div class="absolute left-3 font-bold text-xs text-slate-500 flex items-center gap-1 pointer-events-none">
+                <span>🇮🇳</span><span>+91</span>
+              </div>
+              <input id="landing-phone-input" type="tel" maxlength="10" placeholder="e.g. 9656360650" class="w-full bg-transparent pl-14 pr-3 py-2.5 text-base text-slate-800 font-mono font-bold focus:outline-none placeholder-slate-400">
+            </div>
+            <p class="text-[10px] text-slate-400 mt-1">ഈ നമ്പറുമായി ബന്ധപ്പെട്ട എല്ലാ സ്റ്റോറുകളിലെയും റിവാർഡുകൾ ഒരൊറ്റ വാലറ്റിൽ ലഭ്യമാകും.</p>
+          </div>
+
+          <!-- Quick Select Customer Chips -->
+          <div>
+            <div class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
+              <span>Quick Select Customer:</span>
+              <span class="text-[9px] text-amber-600 font-bold">EEYES PRO & Partners</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-left">
+              <button type="button" onclick="selectLandingCustomer('9656360650')" class="neu-chip p-2.5 flex flex-col justify-between cursor-pointer border border-amber-400/40">
+                <div class="font-black text-slate-900 text-[11px] truncate flex items-center gap-1">
+                  <span>👑</span><span>MIDHILAJ PS</span>
                 </div>
-              </div>
-              <div class="text-[10px] text-amber-300/90 mb-2.5">
-                Select your preferred centralized display name:
-              </div>
-              <div id="landing-firm-names-radio-container" class="space-y-1.5 mb-2.5"></div>
+                <div class="text-[10px] font-mono text-amber-600 font-black">+91 9656360650</div>
+                <div class="text-[8px] text-slate-500 font-bold">32,860 Pts • EEYES PRO</div>
+              </button>
+              <button type="button" onclick="selectLandingCustomer('9822012345')" class="neu-chip p-2.5 flex flex-col justify-between cursor-pointer">
+                <div class="font-black text-slate-900 text-[11px] truncate flex items-center gap-1">
+                  <span>🏪</span><span>Ramesh Supermarket</span>
+                </div>
+                <div class="text-[10px] font-mono text-indigo-600 font-bold">+91 9822012345</div>
+                <div class="text-[8px] text-slate-400">EEYES PRO Store</div>
+              </button>
+              <button type="button" onclick="selectLandingCustomer('9946889900')" class="neu-chip p-2.5 flex flex-col justify-between cursor-pointer">
+                <div class="font-black text-slate-900 text-[11px] truncate flex items-center gap-1">
+                  <span>🏪</span><span>Malabar Spices</span>
+                </div>
+                <div class="text-[10px] font-mono text-indigo-600 font-bold">+91 9946889900</div>
+                <div class="text-[8px] text-slate-400">EEYES PRO Store</div>
+              </button>
+              <button type="button" onclick="selectLandingCustomer('9876543210')" class="neu-chip p-2.5 flex flex-col justify-between cursor-pointer">
+                <div class="font-black text-slate-900 text-[11px] truncate flex items-center gap-1">
+                  <span>👤</span><span>Rahul Sharma</span>
+                </div>
+                <div class="text-[10px] font-mono text-indigo-600 font-bold">+91 9876543210</div>
+                <div class="text-[8px] text-amber-600 font-bold">Multi-Firm Divergence</div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== SLIDE 3: OTP VERIFICATION & NAME MERGE ==================== -->
+        <div id="login-slide-3" class="login-slide-panel hidden flex-1 flex flex-col justify-center py-2 transition-all duration-300 space-y-3.5">
+          <div class="text-left space-y-1">
+            <div class="w-10 h-10 rounded-2xl bg-emerald-500/15 text-emerald-600 flex items-center justify-center text-lg font-bold">
+              🔑
+            </div>
+            <h3 class="text-xl font-black text-slate-900 tracking-tight">ഒടിപി പരിശോധന (Verify OTP)</h3>
+            <p class="text-xs font-medium text-slate-500">
+              Sent to: <strong id="landing-otp-target-phone" class="font-mono text-slate-800 font-bold">+91 9656360650</strong>
+            </p>
+          </div>
+
+          <!-- OTP Box -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-bold text-slate-700">6-അക്ക ഒടിപി നൽകുക</span>
+              <button type="button" id="btn-landing-autofill-otp" onclick="autoFillLandingDemoOtp()" class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-700 hover:bg-emerald-500/30 transition cursor-pointer">
+                Auto-Fill OTP: <span id="landing-demo-otp-badge" class="font-mono font-bold">123456</span>
+              </button>
+            </div>
+            <div class="neu-inset-light p-1 rounded-2xl">
+              <input id="landing-otp-input" type="text" maxlength="6" placeholder="• • • • • •" class="w-full bg-transparent py-2.5 text-center text-2xl tracking-[0.4em] text-amber-600 font-mono font-black focus:outline-none">
+            </div>
+          </div>
+
+          <!-- Multi-Firm Name Resolution Section -->
+          <div id="landing-name-conflict-box" class="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 hidden text-left">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-base">🔀</span>
               <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1">Or enter custom preferred name:</label>
-                <input id="landing-custom-name-input" type="text" placeholder="e.g. Ramesh S." class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:border-indigo-500">
+                <div class="font-bold text-slate-900 text-xs">Cross-Store Profile Name Conflict</div>
+                <div class="text-[10px] text-slate-500">പല ഫേമുകളിൽ പല പേരായി കിടക്കുന്നവ ഒരൊറ്റ പേരായി തിരഞ്ഞെടുക്കുക:</div>
               </div>
             </div>
-
-            <button type="button" id="btn-landing-verify-otp" onclick="verifyLandingOtpFlow()" class="w-full py-3.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white font-black text-xs rounded-2xl shadow-lg transition flex items-center justify-center gap-2 cursor-pointer transform hover:scale-[1.01]">
-              <span>ഹോം പേജിലേക്ക് പ്രവേശിക്കുക (Enter Home Page)</span>
-              <span>&rarr;</span>
-            </button>
+            <div id="landing-firm-names-radio-container" class="space-y-1.5 mb-2.5"></div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-600 mb-1">Or enter custom preferred name:</label>
+              <div class="neu-inset-light p-1 rounded-xl">
+                <input id="landing-custom-name-input" type="text" placeholder="e.g. MIDHILAJ PS" class="w-full bg-transparent px-2.5 py-1 text-xs text-slate-800 font-semibold focus:outline-none">
+              </div>
+            </div>
           </div>
         </div>
 
-        <div class="mt-4 p-3 rounded-2xl bg-slate-900/40 border border-slate-800 text-center text-[10px] text-slate-400">
-          🔒 100% Secure & Unified with EEYES PRO ERP Software • 1 Reward Point = ₹1.00
+        <!-- ==================== SIGNATURE BOTTOM BAR (MATCHING USER IMAGE EXACTLY) ==================== -->
+        <div class="pt-3 pb-1 flex items-center justify-between border-t border-slate-200/80 mt-2">
+          <!-- Left: Skip / Back -->
+          <button type="button" id="btn-login-skip" onclick="loginSlideSkip()" class="text-xs font-bold text-slate-400 hover:text-slate-700 transition cursor-pointer py-1 px-1">
+            Skip
+          </button>
+
+          <!-- Center: 3 Dots Indicator -->
+          <div class="flex items-center gap-1.5" id="login-dots-container">
+            <button type="button" onclick="setLoginSlide(1)" id="login-dot-1" class="w-4 h-1.5 rounded-full bg-amber-500 shadow-xs transition-all"></button>
+            <button type="button" onclick="setLoginSlide(2)" id="login-dot-2" class="w-1.5 h-1.5 rounded-full bg-slate-300 transition-all"></button>
+            <button type="button" onclick="setLoginSlide(3)" id="login-dot-3" class="w-1.5 h-1.5 rounded-full bg-slate-300 transition-all"></button>
+          </div>
+
+          <!-- Right: Neumorphic Circular Arrow Button -->
+          <button type="button" id="btn-login-arrow-action" onclick="onLoginArrowClick()" class="w-12 h-12 neu-btn-circle flex items-center justify-center text-slate-700 font-black text-lg hover:text-amber-600 transition cursor-pointer">
+            <span>&rarr;</span>
+          </button>
         </div>
-              </div>
+
+        <!-- Hidden legacy hooks for complete JS backwards-compatibility -->
+        <div class="hidden">
+          <div id="landing-login-step-phone"></div>
+          <div id="landing-login-step-otp"></div>
+          <button id="btn-landing-request-otp" onclick="requestLandingOtpFlow()"></button>
+          <button id="btn-landing-verify-otp" onclick="verifyLandingOtpFlow()"></button>
+        </div>
+
       </section>
+
 
       <!-- ==================== VIEW 1: HOME ==================== -->
       <section id="view-home" class="tab-view animate-slide-up hidden">
@@ -1603,9 +1734,58 @@
     </div>
   </div>
 
-  </main>
+  
+  <!-- ==================== MODAL: MOBILE PHONE CONNECT & QR ==================== -->
+  <div id="mobile-connect-modal" class="bottom-sheet max-w-sm mx-auto p-4 text-center z-50">
+    <div class="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-3">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">📱</span>
+        <div class="text-left">
+          <div class="font-black text-white text-xs">ഫോണിൽ തുറക്കുക (Mobile Link)</div>
+          <div class="text-[10px] text-indigo-400 font-bold">Scan QR or Open Link</div>
+        </div>
+      </div>
+      <button type="button" onclick="closeModal('mobile-connect-modal')" class="text-slate-400 hover:text-white p-1 text-base font-bold cursor-pointer">✕</button>
+    </div>
 
-  <script src="/static/js/app.js"></script>
+    <div class="space-y-3">
+      <!-- QR Code Container -->
+      <div class="bg-white p-3 rounded-2xl inline-block mx-auto shadow-xl border-4 border-indigo-500/30">
+        <img src="/mobile_connect_qr.png" alt="Scan to open on phone" class="w-44 h-44 mx-auto object-contain">
+      </div>
+      <p class="text-[11px] text-slate-300 leading-snug">
+        ഫോണിലെ ക്യാമറ തുറന്ന് മുകളിലെ <strong>QR Code സ്കാൻ ചെയ്യുക</strong>. തൽക്ഷണം ആപ്പ് ഫോണിൽ തുറക്കും!
+      </p>
+
+      <!-- Direct Wi-Fi Link -->
+      <div class="p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-left space-y-1">
+        <div class="text-[10px] font-bold text-emerald-400 flex items-center justify-between">
+          <span>📶 വൈഫൈ ലിങ്ക് (Wi-Fi Direct):</span>
+          <button type="button" onclick="navigator.clipboard.writeText('http://10.191.114.79:5050'); this.innerText='✓ കോപ്പി ആയി';" class="text-[9px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-bold cursor-pointer hover:bg-emerald-500/30">📋 കോപ്പി</button>
+        </div>
+        <div class="font-mono text-xs text-white select-all font-bold">http://10.191.114.79:5050</div>
+        <div class="text-[9px] text-slate-400">ഫോണും ലാപ്ടോപ്പും ഒരേ Wi-Fi-ൽ ആയിരിക്കണം.</div>
+      </div>
+
+      <!-- Direct Cloud Link -->
+      <div class="p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-left space-y-1">
+        <div class="text-[10px] font-bold text-indigo-400 flex items-center justify-between">
+          <span>🌐 ക്ലൗഡ് ലിങ്ക് (Any 4G/5G/Wi-Fi):</span>
+          <button type="button" onclick="navigator.clipboard.writeText('https://omnipoints-app.onrender.com'); this.innerText='✓ കോപ്പി ആയി';" class="text-[9px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded font-bold cursor-pointer hover:bg-indigo-500/30">📋 കോപ്പി</button>
+        </div>
+        <div class="font-mono text-xs text-white select-all font-bold">https://omnipoints-app.onrender.com</div>
+        <div class="text-[9px] text-slate-400">ഏത് ഇന്റർനെറ്റിലും എവിടെനിന്നും തുറക്കാം.</div>
+      </div>
+
+      <button type="button" onclick="closeModal('mobile-connect-modal')" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition cursor-pointer">
+        ശരി (Close)
+      </button>
+    </div>
+  </div>
+
+</main>
+
+  <script src="/static/js/app.js?v=20261123_v5"></script>
   <script>
     // Keep local clock updated
     setInterval(() => {
