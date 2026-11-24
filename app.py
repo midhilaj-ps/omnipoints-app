@@ -1226,7 +1226,15 @@ def auth_lookup_phone():
     ledger = get_customer_business_ledger(phone)
 
     # Real-time sync to EEYES PRO
-    sync_customer_to_eeyes_pro(phone, name, address, city, pincode, f"{phone}@rewards.espro")
+    try:
+        c_name = user_dict.get('name') or f"Customer {phone[-4:]}"
+        c_addr = user_dict.get('address') or ''
+        c_city = user_dict.get('city') or ''
+        c_pin = user_dict.get('pincode') or ''
+        c_email = user_dict.get('email') or f"{phone}@rewards.espro"
+        sync_customer_to_eeyes_pro(phone, c_name, c_addr, c_city, c_pin, c_email)
+    except Exception as sync_err:
+        print("sync_customer_to_eeyes_pro background note:", sync_err)
 
     return jsonify({
         'success': True,
