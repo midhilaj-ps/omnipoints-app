@@ -3061,7 +3061,7 @@ function triggerAppleHelloAnimation(customerName, onComplete) {
   }
 
   if (nameEl) {
-    nameEl.textContent = `ഹലോ, ${customerName || 'പ്രിയ ഉപഭോക്താവേ'}`;
+    nameEl.textContent = `${customerName || 'പ്രിയ ഉപഭോക്താവേ'}`;
   }
 
   // Play chime sound
